@@ -98,13 +98,39 @@ def start_job():
     subprocess.Popen('cmd /k' + command)
 
 
+# Audio Atempo Selection --------------------------------------------------------------------------------------
+audio_format = StringVar(root)
+audio_format_choices = {'Default (Best - WAV)': '--audio-format wav ',
+                         'AAC': '--audio-format aac ',
+                         'FLAC': '--audio-format flac ',
+                         'MP3': '--audio-format mp3 ',
+                         'M4A': '--audio-format m4a ',
+                         'Opus': '--audio-format opus ',
+                         'Vorbis': '--audio-format vorbis '}
+audio_format_menu_label = Label(root, text="Audio Format :", background="#434547",
+                                 foreground="white")
+audio_format_menu_label.grid(row=3, column=0, columnspan=1, padx=10, pady=3, sticky=W + E)
+audio_format_menu = OptionMenu(root, audio_format, *audio_format_choices.keys())
+audio_format_menu.config(background="#23272A", foreground="white", highlightthickness=1)
+audio_format_menu.grid(row=4, column=0, columnspan=1, padx=10, pady=3, sticky=N + S + W + E)
+audio_format.set('Default (Best - WAV)')
+# acodec_atempo_menu["menu"].configure(activebackground="dim grey")
+# acodec_atempo_menu.bind("<Enter>", acodec_atempo_menu_hover)
+# acodec_atempo_menu.bind("<Leave>", acodec_atempo_menu_hover_leave)
+# ------------------------------------------------------------------------------------------------ Audio Atempo
 
-text_area_label = Label(text='Paste Link:', font=("Times New Roman", 12))
+
+
+text_area_label = Label(text='Paste Link:', font=("Times New Roman", 12), background="#434547",foreground="white")
 text_area_label.grid(row=0, column=0, columnspan=1, pady=(15,1), padx=10, sticky=W)
 text_area = scrolledtext.ScrolledText(root, wrap=WORD, width=69, height=1, font=("Times New Roman", 14))
 text_area.grid(row=1, column=0, columnspan=3, pady=(1,5), padx=10)
+
+link_entry = Entry(root, borderwidth=4, background="#CACACA", state=DISABLED)
+link_entry.grid(row=2, column=1, columnspan=2, padx=10, pady=(0, 0), sticky=W + E)
+
 apply_btn = Button(root, text="Add Link", command=apply_link)
-apply_btn.grid(row=2, column=2, columnspan=1, padx=5, pady=5, sticky=N + S + E + W)
+apply_btn.grid(row=2, column=0, columnspan=1, padx=10, pady=5, sticky=N + S + W)
 
 save_btn = Button(root, text="Save Location", command=file_save)
 save_btn.grid()
