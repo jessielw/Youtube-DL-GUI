@@ -91,14 +91,34 @@ def file_save():
 
 # --------------------------------------------------------------------------------------------------------- File Output
 
-def start_job():
-    command = '"' + youtube_dl_cli + ffmpeg_location + '--audio-quality 0 ' + '-x ' + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' \
-              + '" ' + download_link + '"'
-    print(command)
-    subprocess.Popen('cmd /k' + command)
+# Audio Only Function -------------------------------------------------------------------------------------------------
+def audio_only_toggle():
+    global audio_format, audio_quality
+    if audio_only.get() == '-x ':
+        audio_format_menu.config(state=NORMAL, background="#23272A")
+        audio_quality_menu.config(state=NORMAL, background="#23272A")
+        audio_format.set('Default (Best - WAV)')
+        audio_quality.set('5 - Default')
+    elif audio_only.get() != '-x ':
+        audio_format.set('')
+        audio_quality.set('')
+        audio_format_menu.config(state=DISABLED, background='grey')
+        audio_quality_menu.config(state=DISABLED, background='grey')
 
+# ------------------------------------------------------------------------------------------------- Audio Only Function
 
-# Audio Atempo Selection --------------------------------------------------------------------------------------
+# Audio Only Checkbutton ----------------------------------------------------------------------------------------------
+audio_only = StringVar()
+audio_only.set("-x ")
+audio_only_checkbox = Checkbutton(root, text='Audio Only', variable=audio_only, onvalue="-x ",
+                                   offvalue="", command=audio_only_toggle)
+audio_only_checkbox.grid(row=3, column=0, columnspan=1, rowspan=2, padx=10, pady=3, sticky=N + S + E + W)
+audio_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+
+# ---------------------------------------------------------------------------------------------- Audio Only Checkbutton
+
+# Audio Format Selection ----------------------------------------------------------------------------------------------
 audio_format = StringVar(root)
 audio_format_choices = {'Default (Best - WAV)': '--audio-format wav ',
                          'AAC': '--audio-format aac ',
@@ -109,18 +129,51 @@ audio_format_choices = {'Default (Best - WAV)': '--audio-format wav ',
                          'Vorbis': '--audio-format vorbis '}
 audio_format_menu_label = Label(root, text="Audio Format :", background="#434547",
                                  foreground="white")
-audio_format_menu_label.grid(row=3, column=0, columnspan=1, padx=10, pady=3, sticky=W + E)
+audio_format_menu_label.grid(row=3, column=1, columnspan=1, padx=10, pady=3, sticky=W + E)
 audio_format_menu = OptionMenu(root, audio_format, *audio_format_choices.keys())
-audio_format_menu.config(background="#23272A", foreground="white", highlightthickness=1)
-audio_format_menu.grid(row=4, column=0, columnspan=1, padx=10, pady=3, sticky=N + S + W + E)
+audio_format_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=15)
+audio_format_menu.grid(row=4, column=1, columnspan=1, padx=10, pady=3, sticky=N + S + W + E)
 audio_format.set('Default (Best - WAV)')
 # acodec_atempo_menu["menu"].configure(activebackground="dim grey")
 # acodec_atempo_menu.bind("<Enter>", acodec_atempo_menu_hover)
 # acodec_atempo_menu.bind("<Leave>", acodec_atempo_menu_hover_leave)
-# ------------------------------------------------------------------------------------------------ Audio Atempo
+# -------------------------------------------------------------------------------------------------------- Audio Format
 
+# Audio Quality Selection ---------------------------------------------------------------------------------------------
+audio_quality = StringVar(root)
+audio_quality_choices = {'0 - Best': '--audio-quality 0 ',
+                        '1': '--audio-quality 1 ',
+                        '2': '--audio-quality 2 ',
+                        '3': '--audio-quality 3 ',
+                        '4': '--audio-quality 4 ',
+                        '5 - Default': '--audio-quality 5 ',
+                        '6': '--audio-quality 6 ',
+                        '7': '--audio-quality 7 ',
+                        '8': '--audio-quality 8 ',
+                        '9 - Worse': '--audio-quality 9 '}
+audio_quality_menu_label = Label(root, text="Audio Quality (VBR) :", background="#434547",
+                                 foreground="white")
+audio_quality_menu_label.grid(row=3, column=2, columnspan=1, padx=10, pady=3, sticky=W + E)
+audio_quality_menu = OptionMenu(root, audio_quality, *audio_quality_choices.keys())
+audio_quality_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=15)
+audio_quality_menu.grid(row=4, column=2, columnspan=1, padx=10, pady=3, sticky=N + S + W + E)
+audio_quality.set('5 - Default')
+# acodec_atempo_menu["menu"].configure(activebackground="dim grey")
+# acodec_atempo_menu.bind("<Enter>", acodec_atempo_menu_hover)
+# acodec_atempo_menu.bind("<Leave>", acodec_atempo_menu_hover_leave)
+# ------------------------------------------------------------------------------------------------------- Audio Quality
 
+# Start Job -----------------------------------------------------------------------------------------------------------
+def start_job():
+    command = '"' + youtube_dl_cli + ffmpeg_location + audio_only.get() \
+              + audio_format_choices[audio_format.get()] + audio_quality_choices[audio_quality.get()] \
+              + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
+    print(command)
+    subprocess.Popen('cmd /k' + command)
 
+# ---------------------------------------------------------------------------------------------------------- Start Job
+
+# Buttons and Entry Box's ---------------------------------------------------------------------------------------------
 text_area_label = Label(text='Paste Link:', font=("Times New Roman", 12), background="#434547",foreground="white")
 text_area_label.grid(row=0, column=0, columnspan=1, pady=(15,1), padx=10, sticky=W)
 text_area = scrolledtext.ScrolledText(root, wrap=WORD, width=69, height=1, font=("Times New Roman", 14))
@@ -129,15 +182,20 @@ text_area.grid(row=1, column=0, columnspan=3, pady=(1,5), padx=10)
 link_entry = Entry(root, borderwidth=4, background="#CACACA", state=DISABLED)
 link_entry.grid(row=2, column=1, columnspan=2, padx=10, pady=(0, 0), sticky=W + E)
 
-apply_btn = Button(root, text="Add Link", command=apply_link)
-apply_btn.grid(row=2, column=0, columnspan=1, padx=10, pady=5, sticky=N + S + W)
+apply_btn = Button(root, text="Add Link", command=apply_link, foreground="white", background="#23272A")
+apply_btn.grid(row=2, column=0, columnspan=1, padx=10, pady=5, sticky=N + S + W + E)
 
-save_btn = Button(root, text="Save Location", command=file_save)
-save_btn.grid()
+save_btn = Button(root, text="Save Location", command=file_save, foreground="white", background="#23272A")
+save_btn.grid(row=5, column=0, columnspan=1, padx=10, pady=5, sticky=N + S + W + E)
 
-start_job_btn = Button(root, text="Start Job", command=start_job)
-start_job_btn.grid()
+save_entry = Entry(root, borderwidth=4, background="#CACACA", state=DISABLED)
+save_entry.grid(row=5, column=1, columnspan=2, padx=10, pady=(0, 0), sticky=W + E)
 
+start_job_btn = Button(root, text="Start Job", command=start_job, foreground="white", background="#23272A")
+start_job_btn.grid(row=10, column=2, columnspan=1, padx=10, pady=5, sticky=N + S + W + E)
+
+# --------------------------------------------------------------------------------------------- Buttons and Entry Box's
 
 # End Loop ------------------------------------------------------------------------------------------------------------
 root.mainloop()
+# ------------------------------------------------------------------------------------------------------------ End Loop
