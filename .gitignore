@@ -1,2 +1,6 @@
 .idea
 .gitattributes
+__pycache__
+build
+dist
+Youtube-DL-Gui.spec
