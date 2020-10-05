@@ -143,15 +143,17 @@ def file_save():
 
 # Audio Only Function -------------------------------------------------------------------------------------------------
 def audio_only_toggle():
-    global audio_format, audio_quality
+    global audio_format_selection, audio_quality_selection
     if audio_only.get() == '-x ':
         audio_format_menu.config(state=NORMAL, background="#23272A")
         audio_quality_menu.config(state=NORMAL, background="#23272A")
         audio_format.set('Default (Best - WAV)')
         audio_quality.set('5 - Default')
+        audio_format_selection = audio_format_choices[audio_format.get()]
+        audio_quality_selection = audio_quality_choices[audio_quality.get()]
     elif audio_only.get() != '-x ':
-        audio_format.set('')
-        audio_quality.set('')
+        audio_format_selection = ''
+        audio_quality_selection = ''
         audio_format_menu.config(state=DISABLED, background='grey')
         audio_quality_menu.config(state=DISABLED, background='grey')
 
@@ -230,8 +232,8 @@ audio_quality_menu.bind("<Leave>", audio_quality_menu_hover_leave)
 # Start Job -----------------------------------------------------------------------------------------------------------
 def start_job():
     command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_only.get() \
-              + audio_format_choices[audio_format.get()] + audio_quality_choices[audio_quality.get()] \
-              + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
+              + audio_format_selection + audio_quality_selection + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' \
+              + '" ' + download_link + '"'
     if shell_options.get() == 'Default':
         subprocess.Popen('cmd /c' + command)
     elif shell_options.get() == 'Debug':
