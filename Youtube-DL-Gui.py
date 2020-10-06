@@ -9,7 +9,7 @@ import pyperclip
 # Main Gui & Windows --------------------------------------------------------
 
 root = Tk()
-root.title("Youtube-DL-Gui Beta v1.1")
+root.title("Youtube-DL-Gui Beta v1.2")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 440
@@ -51,7 +51,7 @@ def openaboutwindow():
     about_window_text = Text(about_window, background="#434547", foreground="white", relief=SUNKEN)
     about_window_text.pack()
     about_window_text.configure(state=NORMAL)
-    about_window_text.insert(INSERT, "Youtube-DL-Gui Beta v1.1 \n")
+    about_window_text.insert(INSERT, "Youtube-DL-Gui Beta v1.2 \n")
     about_window_text.insert(INSERT, "\n")
     about_window_text.insert(INSERT, "Development: jlw4049")
     about_window_text.insert(INSERT, "\n\n")
@@ -305,16 +305,19 @@ def start_job():
 # ----------------------------------------------------------------------------------------------------------- Start Job
 
 # Buttons and Entry Box's ---------------------------------------------------------------------------------------------
-text_area = scrolledtext.ScrolledText(link_frame, wrap=WORD, width=69, height=1, font=("Times New Roman", 14))
+text_area = scrolledtext.ScrolledText(link_frame, wrap=WORD, width=69, height=1, font=("Times New Roman", 14),
+                                      foreground="grey")
 text_area.insert(END, "Right Click or 'Ctrl + V'")
 text_area.grid(row=0, column=0, columnspan=3, pady=(1,5), padx=10, sticky=W + E)
 
 # -------------------------------------------------------------------------- Right click menu to paste in text_area box
 def paste_clipboard():  # Allows user to paste what ever is in their clipboard with right click and paste
     text_area.delete(1.0, END)
+    text_area.config(foreground="black")
     text_area.insert(END, pyperclip.paste())
 
 def remove_text(event):  # Deletes current text in text box upon 'Left Clicking'
+    text_area.config(foreground="black")
     text_area.delete(1.0, END)
 
 m = Menu(root, tearoff = 0) # Pop up menu for 'Paste'
