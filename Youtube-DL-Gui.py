@@ -4,6 +4,7 @@ from tkinter import *
 from tkinter import filedialog, StringVar
 import subprocess
 from tkinter import scrolledtext
+import pyperclip
 
 # Main Gui & Windows --------------------------------------------------------
 
@@ -305,7 +306,27 @@ def start_job():
 
 # Buttons and Entry Box's ---------------------------------------------------------------------------------------------
 text_area = scrolledtext.ScrolledText(link_frame, wrap=WORD, width=69, height=1, font=("Times New Roman", 14))
+text_area.insert(END, "Right Click or 'Ctrl + V'")
 text_area.grid(row=0, column=0, columnspan=3, pady=(1,5), padx=10, sticky=W + E)
+
+# -------------------------------------------------------------------------- Right click menu to paste in text_area box
+def paste_clipboard():  # Allows user to paste what ever is in their clipboard with right click and paste
+    text_area.delete(1.0, END)
+    text_area.insert(END, pyperclip.paste())
+
+def remove_text(event):  # Deletes current text in text box upon 'Left Clicking'
+    text_area.delete(1.0, END)
+
+m = Menu(root, tearoff = 0) # Pop up menu for 'Paste'
+m.add_command(label = "Paste", command=paste_clipboard)
+def do_popup(event):
+    try:
+        m.tk_popup(event.x_root, event.y_root)
+    finally:
+        m.grab_release()
+text_area.bind("<Button-3>", do_popup)  # Uses right click to make a function
+text_area.bind("<Button-1>", remove_text)  # Uses left click to make a function
+# Right click menu to paste in text_area box --------------------------------------------------------------------------
 
 link_entry = Entry(link_frame, borderwidth=4, background="#CACACA", state=DISABLED, width=70)
 link_entry.grid(row=1, column=1, columnspan=2, padx=10, pady=(0, 0), sticky=W + E)
