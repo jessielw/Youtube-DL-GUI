@@ -9,7 +9,7 @@ import pyperclip
 # Main Gui & Windows --------------------------------------------------------
 
 root = Tk()
-root.title("Youtube-DL-Gui Beta v1.2")
+root.title("Youtube-DL-Gui Beta v1.3")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 440
@@ -51,7 +51,7 @@ def openaboutwindow():
     about_window_text = Text(about_window, background="#434547", foreground="white", relief=SUNKEN)
     about_window_text.pack()
     about_window_text.configure(state=NORMAL)
-    about_window_text.insert(INSERT, "Youtube-DL-Gui Beta v1.2 \n")
+    about_window_text.insert(INSERT, "Youtube-DL-Gui Beta v1.3 \n")
     about_window_text.insert(INSERT, "\n")
     about_window_text.insert(INSERT, "Development: jlw4049")
     about_window_text.insert(INSERT, "\n\n")
