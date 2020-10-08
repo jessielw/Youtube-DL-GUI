@@ -6,13 +6,13 @@ import subprocess
 from tkinter import scrolledtext
 import pyperclip
 
-# Main Gui & Windows --------------------------------------------------------
+# root Gui & Windows --------------------------------------------------------
 
 root = Tk()
-root.title("Youtube-DL-Gui Beta v1.3")
+root.title("Youtube-DL-Gui Beta v1.4")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
-window_height = 440
+window_height = 620
 window_width = 720
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
@@ -51,7 +51,7 @@ def openaboutwindow():
     about_window_text = Text(about_window, background="#434547", foreground="white", relief=SUNKEN)
     about_window_text.pack()
     about_window_text.configure(state=NORMAL)
-    about_window_text.insert(INSERT, "Youtube-DL-Gui Beta v1.3 \n")
+    about_window_text.insert(INSERT, "Youtube-DL-Gui Beta v1.4 \n")
     about_window_text.insert(INSERT, "\n")
     about_window_text.insert(INSERT, "Development: jlw4049")
     about_window_text.insert(INSERT, "\n\n")
@@ -107,9 +107,20 @@ link_frame.columnconfigure(1, weight=1)
 
 # ---------------------------------------------------------------------------------------------------------- Link Frame
 
+# General Frame ------------------------------------------------------------------------------------------------------
+general_frame = LabelFrame(root, text=' General Settings ')
+general_frame.grid(row=1, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
+general_frame.configure(fg="white", bg="#434547", bd=3)
+
+general_frame.rowconfigure(1, weight=1)
+# general_frame.columnconfigure(0, weight=1)
+# general_frame.columnconfigure(1, weight=1)
+
+# ------------------------------------------------------------------------------------------------------- General Frame
+
 # Audio Frame ---------------------------------------------------------------------------------------------------------
 audio_frame = LabelFrame(root, text=' Audio Settings ')
-audio_frame.grid(row=1, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
+audio_frame.grid(row=2, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
 audio_frame.configure(fg="white", bg="#434547", bd=3)
 
 audio_frame.rowconfigure(0, weight=1)
@@ -131,6 +142,7 @@ def apply_link():
     link_entry.config(state=NORMAL)      #
     link_entry.insert(0, download_link)  # Adds download_link to entry box
     link_entry.config(state=DISABLED)    #
+    save_btn.config(state=NORMAL)
 
 # ------------------------------------------------------------------------------------------------------------ Add Link
 
@@ -146,6 +158,8 @@ def file_save():
         save_entry.config(state=NORMAL)       #
         save_entry.insert(0, save_for_entry)  # Adds download_link to entry box
         save_entry.config(state=DISABLED)     #
+        command_line_btn.config(state=NORMAL)  # Enables Button
+        start_job_btn.config(state=NORMAL)     # Enalbes Button
 
 # --------------------------------------------------------------------------------------------------------- File Output
 
@@ -212,7 +226,7 @@ highest_quality_audio_only.set("on")
 
 # ------------------------------------------------------------------------------------------ Highest Quality Audio Only
 
-# Add Meta-Data From Title ------------------------------------------------------------------------------------------
+# Add Meta-Data From Title --------------------------------------------------------------------------------------------
 metadata_from_title = StringVar()
 metadata_from_title_checkbox = Checkbutton(audio_frame, text='Add Meta-Data\nFrom Title', variable=metadata_from_title,
                                            onvalue='--add-metadata --metadata-from-title "%(artist)s" ', offvalue='')
@@ -243,13 +257,49 @@ audio_format_menu_label = Label(audio_frame, text="Audio Format :", background="
                                  foreground="white")
 audio_format_menu_label.grid(row=0, column=1, columnspan=2, padx=10, pady=(3,10), sticky=W + E)
 audio_format_menu = OptionMenu(audio_frame, audio_format, *audio_format_choices.keys())
-audio_format_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=23, state=DISABLED)
+audio_format_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=19, state=DISABLED)
 audio_format_menu.grid(row=1, column=1, columnspan=2, padx=10, pady=(3,10))
 audio_format.set('WAV')
 audio_format_menu["menu"].configure(activebackground="dim grey")
 audio_format_menu.bind("<Enter>", audio_format_menu_hover)
 audio_format_menu.bind("<Leave>", audio_format_menu_hover_leave)
 # -------------------------------------------------------------------------------------------------------- Audio Format
+
+# Download Rate -------------------------------------------------------------------------------------------------------
+def download_rate_menu_hover(e):
+    download_rate_menu["bg"] = "grey"
+    download_rate_menu["activebackground"] = "grey"
+
+def download_rate_menu_hover_leave(e):
+    download_rate_menu["bg"] = "#23272A"
+
+download_rate = StringVar(root)
+download_rate_choices = {'Unlimited': '',
+                         '10 - KiB      (Slowest)': '-r 10K ',
+                         '50 - KiB': '-r 50K ',
+                         '100 - KiB': '-r 100K ',
+                         '250 - KiB': '-r 250K ',
+                         '500 - KiB': '-r 500K ',
+                         '750 - KiB': '-r 750K ',
+                         '1 - MiB': '-r 1M ',
+                         '5 - MiB': '-r 5M ',
+                         '10 - MiB': '-r 10M ',
+                         '30 - MiB': '-r 30M ',
+                         '50 - MiB': '-r 50M ',
+                         '100 - MiB': '-r 100M ',
+                         '500 - MiB': '-r 500M ',
+                         '1000 - MiB  (Fastest)': '-r 1000M '}
+download_rate_menu_label = Label(general_frame, text="Download Rate :", background="#434547",
+                                 foreground="white")
+download_rate_menu_label.grid(row=0, column=0, columnspan=1, padx=10, pady=(3,10), sticky=W + E)
+download_rate_menu = OptionMenu(general_frame, download_rate, *download_rate_choices.keys())
+download_rate_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=19)
+download_rate_menu.grid(row=1, column=0, columnspan=1, padx=10, pady=(3,10))
+download_rate.set('Unlimited')
+download_rate_menu["menu"].configure(activebackground="dim grey")
+download_rate_menu.bind("<Enter>", download_rate_menu_hover)
+download_rate_menu.bind("<Leave>", download_rate_menu_hover_leave)
+# ------------------------------------------------------------------------------------------------------- Download Rate
 
 # Audio Quality Selection ---------------------------------------------------------------------------------------------
 def audio_quality_menu_hover(e):
@@ -273,13 +323,52 @@ audio_quality_choices = {'0 - Best': '--audio-quality 0 -x ',
 audio_quality_menu_label = Label(audio_frame, text="Audio Quality (VBR) :", background="#434547", foreground="white")
 audio_quality_menu_label.grid(row=0, column=3, columnspan=2, padx=10, pady=(3,10), sticky=W + E)
 audio_quality_menu = OptionMenu(audio_frame, audio_quality, *audio_quality_choices.keys())
-audio_quality_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=23, state=DISABLED)
+audio_quality_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=19, state=DISABLED)
 audio_quality_menu.grid(row=1, column=3, columnspan=2, padx=10, pady=(3,10))
 audio_quality.set('5 - Default')
 audio_quality_menu["menu"].configure(activebackground="dim grey")
 audio_quality_menu.bind("<Enter>", audio_quality_menu_hover)
 audio_quality_menu.bind("<Leave>", audio_quality_menu_hover_leave)
 # ------------------------------------------------------------------------------------------------------- Audio Quality
+
+# Views Command -------------------------------------------------------------------------------------------------------
+def view_command():
+    global cmd_line_window
+    global cmd_label
+    if audio_only.get() == 'on':
+        if highest_quality_audio_only.get() == 'on':
+            audio_format_selection = '--audio-format best -x '
+            audio_quality_selection = ''
+        elif highest_quality_audio_only.get() != 'on':
+            audio_format_selection = audio_format_choices[audio_format.get()]
+            audio_quality_selection = audio_quality_choices[audio_quality.get()]
+    elif audio_only.get() != 'on':
+        audio_format_selection = '-f bestvideo+bestaudio '
+        audio_quality_selection = ''
+    example_cmd_output = '--console-title ' \
+                         + audio_format_selection + audio_quality_selection \
+                         + download_rate_choices[download_rate.get()] \
+                         + metadata_from_title.get() + '-o ' + '"' + '\n\n' + VideoOutput + '/%(title)s.%(ext)s' \
+                         + '" ' + '\n\n' + download_link
+
+    try:
+        cmd_label.config(text=example_cmd_output)
+        cmd_line_window.deiconify()
+    except (AttributeError, NameError):
+        cmd_line_window = Toplevel()
+        cmd_line_window.title('Command Line')
+        cmd_line_window.configure(background="#434547")
+        cmd_label = Label(cmd_line_window, text=example_cmd_output, foreground="white",
+                          background="#434547")
+        cmd_label.config(font=("Helvetica", 16))
+        cmd_label.pack()
+
+        def hide_instead():
+            cmd_line_window.withdraw()
+
+        cmd_line_window.protocol('WM_DELETE_WINDOW', hide_instead)
+
+# ------------------------------------------------------------------------------------------------------- Views Command
 
 # Start Job -----------------------------------------------------------------------------------------------------------
 def start_job():
@@ -293,14 +382,14 @@ def start_job():
     elif audio_only.get() != 'on':
         audio_format_selection = '-f bestvideo+bestaudio '
         audio_quality_selection = ''
-    command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' \
-              + audio_format_selection + audio_quality_selection \
-              + metadata_from_title.get() + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' \
-              + '" ' + download_link + '"'
+    command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_format_selection \
+              + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
+              + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
     if shell_options.get() == 'Default':
         subprocess.Popen('cmd /c' + command)
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
+    cmd_line_window.withdraw()
 
 # ----------------------------------------------------------------------------------------------------------- Start Job
 
@@ -316,7 +405,7 @@ def paste_clipboard():  # Allows user to paste what ever is in their clipboard w
     text_area.config(foreground="black")
     text_area.insert(END, pyperclip.paste())
 
-def remove_text(event):  # Deletes current text in text box upon 'Left Clicking'
+def remove_text(e):  # Deletes current text in text box upon 'Left Clicking'
     text_area.config(foreground="black")
     text_area.delete(1.0, END)
 
@@ -351,13 +440,14 @@ def save_btn_hover(e):
 def save_btn_hover_leave(e):
     save_btn["bg"] = "#8b0000"
 
-save_btn = Button(root, text="Save Directory", command=file_save, foreground="white", background="#8b0000")
-save_btn.grid(row=2, column=0, columnspan=1, padx=10, pady=(15,0), sticky=W + E)
+save_btn = Button(root, text="Save Directory", command=file_save, foreground="white", background="#8b0000",
+                  state=DISABLED)
+save_btn.grid(row=3, column=0, columnspan=1, padx=10, pady=(15,0), sticky=W + E)
 save_btn.bind("<Enter>", save_btn_hover)
 save_btn.bind("<Leave>", save_btn_hover_leave)
 
 save_entry = Entry(root, borderwidth=4, background="#CACACA", state=DISABLED)
-save_entry.grid(row=2, column=1, columnspan=3, padx=10, pady=(15, 0), sticky=W + E)
+save_entry.grid(row=3, column=1, columnspan=3, padx=10, pady=(15, 0), sticky=W + E)
 
 def start_job_btn_hover(e):
     start_job_btn["bg"] = "grey"
@@ -365,10 +455,23 @@ def start_job_btn_hover(e):
 def start_job_btn_hover_leave(e):
     start_job_btn["bg"] = "#8b0000"
 
-start_job_btn = Button(root, text="Start Job", command=start_job, foreground="white", background="#8b0000")
-start_job_btn.grid(row=3, column=3, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
+start_job_btn = Button(root, text="Start Job", command=start_job, foreground="white", background="#8b0000",
+                       state=DISABLED)
+start_job_btn.grid(row=4, column=3, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
 start_job_btn.bind("<Enter>", start_job_btn_hover)
 start_job_btn.bind("<Leave>", start_job_btn_hover_leave)
+
+def command_line_btn_hover(e):
+    command_line_btn["bg"] = "grey"
+
+def command_line_btn_hover_leave(e):
+    command_line_btn["bg"] = "#8b0000"
+
+command_line_btn = Button(root, text="View Command", command=view_command, foreground="white", background="#8b0000",
+                          state=DISABLED)
+command_line_btn.grid(row=4, column=0, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
+command_line_btn.bind("<Enter>", command_line_btn_hover)
+command_line_btn.bind("<Leave>", command_line_btn_hover_leave)
 
 # --------------------------------------------------------------------------------------------- Buttons and Entry Box's
 
