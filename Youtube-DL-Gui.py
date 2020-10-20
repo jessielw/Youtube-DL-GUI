@@ -5,6 +5,8 @@ from tkinter import filedialog, StringVar
 import subprocess
 from tkinter import scrolledtext
 import pyperclip
+import shutil
+import pathlib
 
 # root Gui & Windows --------------------------------------------------------
 
@@ -31,8 +33,18 @@ root.grid_rowconfigure(3, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
 
-youtube_dl_cli = '"' + "Apps/youtube-dl/youtube-dl.exe" + '"'
-ffmpeg_location = ' --ffmpeg-location "Apps/ffmpeg/ffmpeg.exe" '
+# youtube_dl_cli = '"' + "Apps/youtube-dl/youtube-dl.exe" + '"'
+# ffmpeg_location = ' --ffmpeg-location "Apps/ffmpeg/ffmpeg.exe" '
+
+if shutil.which('youtube-dl') != None:
+    youtube_dl_cli = '"' + str(pathlib.Path(shutil.which('youtube-dl'))) + '"'
+elif shutil.which('youtube-dl') == None:
+    youtube_dl_cli = '"' + str(pathlib.Path("Apps/FFMPEG/youtube-dl.exe")) + '"'
+
+if shutil.which('ffmpeg') != None:
+    ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path(shutil.which('ffmpeg'))) + ' '
+elif shutil.which('ffmpeg') == None:
+    ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path("Apps/FFMPEG/ffmpeg.exe")) + ' '
 
 # --------------------------------------------------------------- Bundled Apps
 
@@ -389,7 +401,10 @@ def start_job():
         subprocess.Popen('cmd /c' + command)
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
-    cmd_line_window.withdraw()
+    try:
+        cmd_line_window.withdraw()
+    except:
+        pass
 
 # ----------------------------------------------------------------------------------------------------------- Start Job
 
