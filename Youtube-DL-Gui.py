@@ -33,9 +33,6 @@ root.grid_rowconfigure(3, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
 
-# youtube_dl_cli = '"' + "Apps/youtube-dl/youtube-dl.exe" + '"'
-# ffmpeg_location = ' --ffmpeg-location "Apps/ffmpeg/ffmpeg.exe" '
-
 if shutil.which('youtube-dl') != None:
     youtube_dl_cli = '"' + str(pathlib.Path(shutil.which('youtube-dl'))) + '"'
 elif shutil.which('youtube-dl') == None:
@@ -355,7 +352,7 @@ def view_command():
             audio_format_selection = audio_format_choices[audio_format.get()]
             audio_quality_selection = audio_quality_choices[audio_quality.get()]
     elif audio_only.get() != 'on':
-        audio_format_selection = '-f bestvideo+bestaudio '
+        audio_format_selection = '-f best '
         audio_quality_selection = ''
     example_cmd_output = '--console-title ' \
                          + audio_format_selection + audio_quality_selection \
@@ -392,7 +389,7 @@ def start_job():
             audio_format_selection = audio_format_choices[audio_format.get()]
             audio_quality_selection = audio_quality_choices[audio_quality.get()]
     elif audio_only.get() != 'on':
-        audio_format_selection = '-f bestvideo+bestaudio '
+        audio_format_selection = '-f best '
         audio_quality_selection = ''
     command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_format_selection \
               + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
