@@ -10,6 +10,7 @@ import shutil
 import pathlib
 import threading
 from tkinter import messagebox
+from Packages.about import openaboutwindow
 
 # root Gui & Windows --------------------------------------------------------
 
@@ -27,7 +28,7 @@ def root_exit_function():
             root.destroy()
 
 root = Tk()
-root.title("Youtube-DL-Gui v1.0")
+root.title("Youtube-DL-Gui v1.1")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 620
@@ -57,31 +58,6 @@ elif shutil.which('ffmpeg') == None:
     ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path("Apps/FFMPEG/ffmpeg.exe")) + ' '
 
 # --------------------------------------------------------------- Bundled Apps
-
-# About Window --------------------------------------------------------------------------------------------------------
-def openaboutwindow():
-    about_window = Toplevel()
-    about_window.title('About')
-    about_window.configure(background="#434547")
-    window_height = 140
-    window_width = 470
-    screen_width = about_window.winfo_screenwidth()
-    screen_height = about_window.winfo_screenheight()
-    x_coordinate = int((screen_width / 2) - (window_width / 2))
-    y_coordinate = int((screen_height / 2) - (window_height / 2))
-    about_window.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
-    about_window_text = Text(about_window, background="#434547", foreground="white", relief=SUNKEN)
-    about_window_text.pack()
-    about_window_text.configure(state=NORMAL)
-    about_window_text.insert(INSERT, "Youtube-DL-Gui v1.0 \n")
-    about_window_text.insert(INSERT, "\n")
-    about_window_text.insert(INSERT, "Development: jlw4049")
-    about_window_text.insert(INSERT, "\n\n")
-    about_window_text.insert(INSERT, "Youtube audio/video downloader. \n")
-    about_window_text.configure(state=DISABLED)
-
-
-# -------------------------------------------------------------------------------------------------------- About Window
 
 def check_for_update():
     command = '"' + youtube_dl_cli + '" --update'
@@ -134,9 +110,11 @@ general_frame = LabelFrame(root, text=' General Settings ')
 general_frame.grid(row=1, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
 general_frame.configure(fg="white", bg="#434547", bd=3)
 
+general_frame.rowconfigure(0, weight=1)
 general_frame.rowconfigure(1, weight=1)
-# general_frame.columnconfigure(0, weight=1)
-# general_frame.columnconfigure(1, weight=1)
+general_frame.columnconfigure(0, weight=1)
+general_frame.columnconfigure(1, weight=1)
+general_frame.columnconfigure(2, weight=1)
 
 # ------------------------------------------------------------------------------------------------------- General Frame
 
@@ -323,6 +301,28 @@ download_rate_menu.bind("<Enter>", download_rate_menu_hover)
 download_rate_menu.bind("<Leave>", download_rate_menu_hover_leave)
 # ------------------------------------------------------------------------------------------------------- Download Rate
 
+# No Continue Checkbutton ---------------------------------------------------------------------------------------------
+no_continue = StringVar()
+no_continue_checkbox = Checkbutton(general_frame, text='Resume\nDownload', variable=no_continue,
+                                   onvalue='', offvalue='--no-continue ')
+no_continue_checkbox.grid(row=0, column=1, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
+no_continue_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+no_continue.set('')
+
+# --------------------------------------------------------------------------------------------------------- No Continue
+
+# No Part Checkbutton -------------------------------------------------------------------------------------------------
+no_part = StringVar()
+no_part_checkbox = Checkbutton(general_frame, text="Don't Use\n.part Files", variable=no_part,
+                                   onvalue='--no-part ', offvalue='')
+no_part_checkbox.grid(row=0, column=2, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
+no_part_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+no_part.set('')
+
+# ------------------------------------------------------------------------------------------------------------- No Part
+
 # Audio Quality Selection ---------------------------------------------------------------------------------------------
 def audio_quality_menu_hover(e):
     audio_quality_menu["bg"] = "grey"
@@ -365,11 +365,11 @@ def view_command():
             audio_format_selection = audio_format_choices[audio_format.get()]
             audio_quality_selection = audio_quality_choices[audio_quality.get()]
     elif audio_only.get() != 'on':
-        audio_format_selection = '-f best '
+        audio_format_selection = ''
         audio_quality_selection = ''
     example_cmd_output = '--console-title ' \
                          + audio_format_selection + audio_quality_selection \
-                         + download_rate_choices[download_rate.get()] \
+                         + download_rate_choices[download_rate.get()] + no_continue.get() + no_part.get() \
                          + metadata_from_title.get() + '-o ' + '"' + '\n\n' + VideoOutput + '/%(title)s.%(ext)s' \
                          + '" ' + '\n\n' + download_link
 
@@ -415,16 +415,16 @@ def start_job():
         encode_label = Label(window, text="- - - - - - - - - - - - - - - - - - - - - - Progress - - "
                                           "- - - - - - - - - - - - - - - - - - - -",
                              font=("Times New Roman", 14), background='#434547', foreground="white")
-        encode_label.grid(column=0, row=0)
+        encode_label.grid(column=0, columnspan=2, row=0)
         window.grid_columnconfigure(0, weight=1)
         window.grid_rowconfigure(0, weight=1)
         window.grid_rowconfigure(1, weight=1)
         window.protocol('WM_DELETE_WINDOW', close_window)
         encode_window_progress = Text(window, width=70, height=2, relief=SUNKEN, bd=3)
-        encode_window_progress.grid(row=1, column=0, pady=(10, 6), padx=10)
+        encode_window_progress.grid(row=1, column=0, columnspan=2, pady=(10, 6), padx=10)
         encode_window_progress.insert(END, '')
         app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, length=630, mode='determinate')
-        app_progress_bar.grid(row=2, pady=(0, 10))
+        app_progress_bar.grid(row=2, column=0, columnspan=2, pady=(0, 10))
 
 
     if audio_only.get() == 'on':
@@ -439,6 +439,7 @@ def start_job():
         audio_quality_selection = ''
     command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_format_selection \
               + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
+              + no_continue.get() + no_part.get() \
               + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
     if shell_options.get() == "Default":
         job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
@@ -450,6 +451,24 @@ def start_job():
             try:
                 download = line.split()[1].rsplit('.', 1)[0]
                 app_progress_bar['value'] = int(download)
+            except:
+                pass
+            try:
+                playlist_amnt = line.split()[0]
+                if playlist_amnt == '[download]':
+                    amount = line.split()[2]
+                    if amount == 'video':
+                        modify_line = line.split()[1:]
+                        total_file_progress = (', '.join(modify_line).replace(',', '').replace('video', 'file'))
+                        progress_label = Label(window, text=total_file_progress, font=("Times New Roman", 14),
+                                               background='#434547', foreground="white")
+                        progress_label.grid(row=3, column=0, pady=(0,20))
+                        file_progress = line.split()[3]
+                        file_progress_total = line.split()[5]
+                        mini_progressbar = ttk.Progressbar(window, orient=HORIZONTAL, length=300, mode='determinate')
+                        mini_progressbar.grid(row=3, column=1, pady=(0, 10), padx=(0,15))
+                        percent = '{:.1%}'.format(int(file_progress) / int(file_progress_total)).split('.', 1)[0]
+                        mini_progressbar['value'] = int(percent)
             except:
                 pass
         window.destroy()
