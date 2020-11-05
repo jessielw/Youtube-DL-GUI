@@ -2,34 +2,47 @@
 
 from tkinter import *
 from tkinter import filedialog, StringVar
+from tkinter import ttk
 import subprocess
 from tkinter import scrolledtext
 import pyperclip
 import shutil
 import pathlib
+import threading
+from tkinter import messagebox
 
 # root Gui & Windows --------------------------------------------------------
 
+def root_exit_function():
+    confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n\nThis "
+                                                               "will end all current taks.",
+                                       parent=root)
+    if confirm_exit == False:
+        pass
+    elif confirm_exit == True:
+        try:
+            subprocess.Popen(f"TASKKILL /F /im Youtube-DL-GUi.exe /T", creationflags=subprocess.CREATE_NO_WINDOW)
+            root.destroy()
+        except:
+            root.destroy()
+
 root = Tk()
-root.title("Youtube-DL-Gui Beta v1.4")
+root.title("Youtube-DL-Gui v1.0")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 620
 window_width = 720
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
-x_cordinate = int((screen_width / 2) - (window_width / 2))
-y_cordinate = int((screen_height / 2) - (window_height / 2))
-root.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
+x_coordinate = int((screen_width / 2) - (window_width / 2))
+y_coordinate = int((screen_height / 2) - (window_height / 2))
+root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+root.protocol('WM_DELETE_WINDOW', root_exit_function)
 
-root.grid_columnconfigure(0, weight=1)
-root.grid_columnconfigure(1, weight=1)
-root.grid_columnconfigure(2, weight=1)
-root.grid_columnconfigure(3, weight=1)
-root.grid_rowconfigure(0, weight=1)
-root.grid_rowconfigure(1, weight=1)
-root.grid_rowconfigure(2, weight=1)
-root.grid_rowconfigure(3, weight=1)
+for n in range(4):
+    root.grid_columnconfigure(n, weight=1)
+for n in range(4):
+    root.grid_rowconfigure(n, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
 
@@ -54,17 +67,17 @@ def openaboutwindow():
     window_width = 470
     screen_width = about_window.winfo_screenwidth()
     screen_height = about_window.winfo_screenheight()
-    x_cordinate = int((screen_width / 2) - (window_width / 2))
-    y_cordinate = int((screen_height / 2) - (window_height / 2))
-    about_window.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
+    x_coordinate = int((screen_width / 2) - (window_width / 2))
+    y_coordinate = int((screen_height / 2) - (window_height / 2))
+    about_window.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
     about_window_text = Text(about_window, background="#434547", foreground="white", relief=SUNKEN)
     about_window_text.pack()
     about_window_text.configure(state=NORMAL)
-    about_window_text.insert(INSERT, "Youtube-DL-Gui Beta v1.4 \n")
+    about_window_text.insert(INSERT, "Youtube-DL-Gui v1.0 \n")
     about_window_text.insert(INSERT, "\n")
     about_window_text.insert(INSERT, "Development: jlw4049")
     about_window_text.insert(INSERT, "\n\n")
-    about_window_text.insert(INSERT, "A early BETA Youtube audio/video downloader. \n")
+    about_window_text.insert(INSERT, "Youtube audio/video downloader. \n")
     about_window_text.configure(state=DISABLED)
 
 
@@ -83,7 +96,7 @@ root.config(menu=my_menu_bar)
 
 file_menu = Menu(my_menu_bar, tearoff=0, activebackground='dim grey')
 my_menu_bar.add_cascade(label='File', menu=file_menu)
-file_menu.add_command(label='Exit', command=root.quit)
+file_menu.add_command(label='Exit', command=root_exit_function)
 
 options_menu = Menu(my_menu_bar, tearoff=0, activebackground='dim grey')
 my_menu_bar.add_cascade(label='Options', menu=options_menu)
@@ -381,6 +394,39 @@ def view_command():
 
 # Start Job -----------------------------------------------------------------------------------------------------------
 def start_job():
+
+    if shell_options.get() == 'Default': # This allows the program to spawn new windows and provide real time progress
+        def close_encode():
+            confirm_exit = messagebox.askyesno(title='Prompt',
+                                               message="Are you sure you want to stop progress?", parent=window)
+            if confirm_exit == False:
+                pass
+            elif confirm_exit == True:
+                subprocess.Popen(f"TASKKILL /F /PID {job.pid} /T", creationflags=subprocess.CREATE_NO_WINDOW)
+                window.destroy()
+
+        def close_window():
+            thread = threading.Thread(target=close_encode)
+            thread.start()
+
+        window = Toplevel(root)
+        window.title(download_link)
+        window.configure(background="#434547")
+        encode_label = Label(window, text="- - - - - - - - - - - - - - - - - - - - - - Progress - - "
+                                          "- - - - - - - - - - - - - - - - - - - -",
+                             font=("Times New Roman", 14), background='#434547', foreground="white")
+        encode_label.grid(column=0, row=0)
+        window.grid_columnconfigure(0, weight=1)
+        window.grid_rowconfigure(0, weight=1)
+        window.grid_rowconfigure(1, weight=1)
+        window.protocol('WM_DELETE_WINDOW', close_window)
+        encode_window_progress = Text(window, width=70, height=2, relief=SUNKEN, bd=3)
+        encode_window_progress.grid(row=1, column=0, pady=(10, 6), padx=10)
+        encode_window_progress.insert(END, '')
+        app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, length=630, mode='determinate')
+        app_progress_bar.grid(row=2, pady=(0, 10))
+
+
     if audio_only.get() == 'on':
         if highest_quality_audio_only.get() == 'on':
             audio_format_selection = '--audio-format best -x '
@@ -389,13 +435,24 @@ def start_job():
             audio_format_selection = audio_format_choices[audio_format.get()]
             audio_quality_selection = audio_quality_choices[audio_quality.get()]
     elif audio_only.get() != 'on':
-        audio_format_selection = '-f best '
+        audio_format_selection = ''
         audio_quality_selection = ''
     command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_format_selection \
               + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
               + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
-    if shell_options.get() == 'Default':
-        subprocess.Popen('cmd /c' + command)
+    if shell_options.get() == "Default":
+        job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                               creationflags=subprocess.CREATE_NO_WINDOW)
+        for line in job.stdout:
+            encode_window_progress.delete('1.0', END)
+            encode_window_progress.insert(END, line)
+            try:
+                download = line.split()[1].rsplit('.', 1)[0]
+                app_progress_bar['value'] = int(download)
+            except:
+                pass
+        window.destroy()
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
     try:
@@ -467,8 +524,8 @@ def start_job_btn_hover(e):
 def start_job_btn_hover_leave(e):
     start_job_btn["bg"] = "#8b0000"
 
-start_job_btn = Button(root, text="Start Job", command=start_job, foreground="white", background="#8b0000",
-                       state=DISABLED)
+start_job_btn = Button(root, text="Start Job", command=lambda: threading.Thread(target=start_job).start(),
+                       foreground="white", background="#8b0000", state=DISABLED)
 start_job_btn.grid(row=4, column=3, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
 start_job_btn.bind("<Enter>", start_job_btn_hover)
 start_job_btn.bind("<Leave>", start_job_btn_hover_leave)
