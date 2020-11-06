@@ -323,6 +323,17 @@ no_part.set('')
 
 # ------------------------------------------------------------------------------------------------------------- No Part
 
+# Youtube-Subtitle Checkbutton ----------------------------------------------------------------------------------------
+yt_subtitle = StringVar()
+yt_subtitle_checkbox = Checkbutton(general_frame, text="Write Auto Subs\n(Youtube Only / If Aval)",
+                                   variable=yt_subtitle, onvalue='--write-auto-sub ', offvalue='')
+yt_subtitle_checkbox.grid(row=1, column=1, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
+yt_subtitle_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+yt_subtitle.set('')
+
+# ---------------------------------------------------------------------------------------------------- Youtube Subtitle
+
 # Audio Quality Selection ---------------------------------------------------------------------------------------------
 def audio_quality_menu_hover(e):
     audio_quality_menu["bg"] = "grey"
@@ -370,7 +381,8 @@ def view_command():
     example_cmd_output = '--console-title ' \
                          + audio_format_selection + audio_quality_selection \
                          + download_rate_choices[download_rate.get()] + no_continue.get() + no_part.get() \
-                         + metadata_from_title.get() + '-o ' + '"' + '\n\n' + VideoOutput + '/%(title)s.%(ext)s' \
+                         + yt_subtitle.get() + metadata_from_title.get() \
+                         + '-o ' + '"' + '\n\n' + VideoOutput + '/%(title)s.%(ext)s' \
                          + '" ' + '\n\n' + download_link
 
     try:
@@ -439,7 +451,7 @@ def start_job():
         audio_quality_selection = ''
     command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_format_selection \
               + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
-              + no_continue.get() + no_part.get() \
+              + no_continue.get() + no_part.get() + yt_subtitle.get() \
               + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
     if shell_options.get() == "Default":
         job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
