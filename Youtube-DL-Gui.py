@@ -11,6 +11,7 @@ import pathlib
 import threading
 from tkinter import messagebox
 from Packages.about import openaboutwindow
+from tkinter import scrolledtext as scrolledtextwidget
 
 # root Gui & Windows --------------------------------------------------------
 
@@ -31,7 +32,7 @@ root = Tk()
 root.title("Youtube-DL-Gui v1.1")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
-window_height = 620
+window_height = 680
 window_width = 720
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
@@ -42,7 +43,7 @@ root.protocol('WM_DELETE_WINDOW', root_exit_function)
 
 for n in range(4):
     root.grid_columnconfigure(n, weight=1)
-for n in range(4):
+for n in range(5):
     root.grid_rowconfigure(n, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
@@ -120,7 +121,7 @@ general_frame.columnconfigure(2, weight=1)
 
 # Audio Frame ---------------------------------------------------------------------------------------------------------
 audio_frame = LabelFrame(root, text=' Audio Settings ')
-audio_frame.grid(row=2, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
+audio_frame.grid(row=3, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
 audio_frame.configure(fg="white", bg="#434547", bd=3)
 
 audio_frame.rowconfigure(0, weight=1)
@@ -130,6 +131,19 @@ audio_frame.columnconfigure(2, weight=1)
 audio_frame.columnconfigure(3, weight=1)
 
 # --------------------------------------------------------------------------------------------------------- Audio Frame
+
+# Video Frame ---------------------------------------------------------------------------------------------------------
+video_frame = LabelFrame(root, text=' Video Settings ')
+video_frame.grid(row=2, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
+video_frame.configure(fg="white", bg="#434547", bd=3)
+
+# audio_frame.rowconfigure(0, weight=1)
+# audio_frame.columnconfigure(0, weight=1)
+# audio_frame.columnconfigure(1, weight=1)
+# audio_frame.columnconfigure(2, weight=1)
+# audio_frame.columnconfigure(3, weight=1)
+
+# --------------------------------------------------------------------------------------------------------- Video Frame
 
 # Add Link to variable ------------------------------------------------------------------------------------------------
 def apply_link():
@@ -143,6 +157,7 @@ def apply_link():
     link_entry.insert(0, download_link)  # Adds download_link to entry box
     link_entry.config(state=DISABLED)    #
     save_btn.config(state=NORMAL)
+    list_all_formats.config(state=NORMAL)
 
 # ------------------------------------------------------------------------------------------------------------ Add Link
 
@@ -164,18 +179,9 @@ def file_save():
 # --------------------------------------------------------------------------------------------------------- File Output
 
 # Audio Only Function -------------------------------------------------------------------------------------------------
-def audio_only_toggle():
+def set_video_only():
     global audio_format_selection, audio_quality_selection
-    if audio_only.get() == 'on':
-        metadata_from_title_checkbox.config(state=NORMAL)
-        metadata_from_title.set('')
-        audio_format_menu.config(state=NORMAL)
-        audio_format.set('WAV')
-        highest_quality_audio_only_checkbox.config(state=NORMAL)
-        highest_quality_audio_only.set('')
-        audio_quality_menu.config(state=NORMAL)
-        audio_quality.set('5 - Default')
-    elif audio_only.get() != 'on':
+    if video_only.get() == 'on':
         metadata_from_title_checkbox.config(state=NORMAL)
         metadata_from_title.set('')
         metadata_from_title_checkbox.config(state=DISABLED)
@@ -188,6 +194,15 @@ def audio_only_toggle():
         audio_quality_menu.config(state=NORMAL)
         audio_quality.set('5 - Default')
         audio_quality_menu.config(state=DISABLED)
+    elif video_only.get() != 'on':
+        metadata_from_title_checkbox.config(state=NORMAL)
+        metadata_from_title.set('')
+        audio_format_menu.config(state=NORMAL)
+        audio_format.set('WAV')
+        highest_quality_audio_only_checkbox.config(state=NORMAL)
+        highest_quality_audio_only.set('')
+        audio_quality_menu.config(state=NORMAL)
+        audio_quality.set('5 - Default')
 
 # ------------------------------------------------------------------------------------------------- Audio Only Function
 def highest_quality_audio_only_toggle():
@@ -202,23 +217,23 @@ def highest_quality_audio_only_toggle():
         audio_quality_menu.config(state=NORMAL)
         audio_quality.set('5 - Default')
 
-# Audio Only Checkbutton ----------------------------------------------------------------------------------------------
-audio_only = StringVar()
-audio_only_checkbox = Checkbutton(audio_frame, text='Audio Only', variable=audio_only, onvalue='on',
-                                   offvalue='', command=audio_only_toggle)
-audio_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
-audio_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+# Video Only Checkbutton ----------------------------------------------------------------------------------------------
+video_only = StringVar()
+video_only_checkbox = Checkbutton(video_frame, text='Best Video + Audio\nSingle File', variable=video_only, onvalue='on',
+                                   offvalue='', command=set_video_only)
+video_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=6, sticky=N + S + E + W)
+video_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
-audio_only.set("on")
+video_only.set('')
 
-# ---------------------------------------------------------------------------------------------- Audio Only Checkbutton
+# ---------------------------------------------------------------------------------------------- Video Only Checkbutton
 
 # Highest Quality Audio Only ------------------------------------------------------------------------------------------
 highest_quality_audio_only = StringVar()
 highest_quality_audio_only_checkbox = Checkbutton(audio_frame, text='Extract Audio Only\nNo Encode',
                                                   variable=highest_quality_audio_only, onvalue='on', offvalue='',
                                                   command=highest_quality_audio_only_toggle)
-highest_quality_audio_only_checkbox.grid(row=1, column=0, columnspan=1, rowspan=1, padx=10, pady=3,
+highest_quality_audio_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=3,
                                          sticky=N + S + E + W)
 highest_quality_audio_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
@@ -230,7 +245,7 @@ highest_quality_audio_only.set("on")
 metadata_from_title = StringVar()
 metadata_from_title_checkbox = Checkbutton(audio_frame, text='Add Meta-Data\nFrom Title', variable=metadata_from_title,
                                            onvalue='--add-metadata --metadata-from-title "%(artist)s" ', offvalue='')
-metadata_from_title_checkbox.grid(row=2, column=0, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
+metadata_from_title_checkbox.grid(row=1, column=0, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 metadata_from_title_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
 metadata_from_title.set('')
@@ -325,7 +340,7 @@ no_part.set('')
 
 # Youtube-Subtitle Checkbutton ----------------------------------------------------------------------------------------
 yt_subtitle = StringVar()
-yt_subtitle_checkbox = Checkbutton(general_frame, text="Write Auto Subs\n(Youtube Only / If Aval)",
+yt_subtitle_checkbox = Checkbutton(general_frame, text="Auto Write Subs\n(Youtube Only / If Aval)",
                                    variable=yt_subtitle, onvalue='--write-auto-sub ', offvalue='')
 yt_subtitle_checkbox.grid(row=1, column=1, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 yt_subtitle_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
@@ -368,14 +383,14 @@ audio_quality_menu.bind("<Leave>", audio_quality_menu_hover_leave)
 def view_command():
     global cmd_line_window
     global cmd_label
-    if audio_only.get() == 'on':
+    if video_only.get() != 'on':
         if highest_quality_audio_only.get() == 'on':
             audio_format_selection = '--audio-format best -x '
             audio_quality_selection = ''
         elif highest_quality_audio_only.get() != 'on':
             audio_format_selection = audio_format_choices[audio_format.get()]
             audio_quality_selection = audio_quality_choices[audio_quality.get()]
-    elif audio_only.get() != 'on':
+    elif video_only.get() == 'on':
         audio_format_selection = ''
         audio_quality_selection = ''
     example_cmd_output = '--console-title ' \
@@ -406,7 +421,6 @@ def view_command():
 
 # Start Job -----------------------------------------------------------------------------------------------------------
 def start_job():
-
     if shell_options.get() == 'Default': # This allows the program to spawn new windows and provide real time progress
         def close_encode():
             confirm_exit = messagebox.askyesno(title='Prompt',
@@ -424,8 +438,7 @@ def start_job():
         window = Toplevel(root)
         window.title(download_link)
         window.configure(background="#434547")
-        encode_label = Label(window, text="- - - - - - - - - - - - - - - - - - - - - - Progress - - "
-                                          "- - - - - - - - - - - - - - - - - - - -",
+        encode_label = Label(window, text= '- ' * 22 + 'Progress ' + '- ' * 22,
                              font=("Times New Roman", 14), background='#434547', foreground="white")
         encode_label.grid(column=0, columnspan=2, row=0)
         window.grid_columnconfigure(0, weight=1)
@@ -439,14 +452,14 @@ def start_job():
         app_progress_bar.grid(row=2, column=0, columnspan=2, pady=(0, 10))
 
 
-    if audio_only.get() == 'on':
+    if video_only.get() != 'on':
         if highest_quality_audio_only.get() == 'on':
             audio_format_selection = '--audio-format best -x '
             audio_quality_selection = ''
         elif highest_quality_audio_only.get() != 'on':
             audio_format_selection = audio_format_choices[audio_format.get()]
             audio_quality_selection = audio_quality_choices[audio_quality.get()]
-    elif audio_only.get() != 'on':
+    elif video_only.get() == 'on':
         audio_format_selection = ''
         audio_quality_selection = ''
     command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_format_selection \
@@ -542,12 +555,12 @@ def save_btn_hover_leave(e):
 
 save_btn = Button(root, text="Save Directory", command=file_save, foreground="white", background="#8b0000",
                   state=DISABLED)
-save_btn.grid(row=3, column=0, columnspan=1, padx=10, pady=(15,0), sticky=W + E)
+save_btn.grid(row=4, column=0, columnspan=1, padx=10, pady=(15,0), sticky=W + E)
 save_btn.bind("<Enter>", save_btn_hover)
 save_btn.bind("<Leave>", save_btn_hover_leave)
 
 save_entry = Entry(root, borderwidth=4, background="#CACACA", state=DISABLED)
-save_entry.grid(row=3, column=1, columnspan=3, padx=10, pady=(15, 0), sticky=W + E)
+save_entry.grid(row=4, column=1, columnspan=3, padx=10, pady=(15, 0), sticky=W + E)
 
 def start_job_btn_hover(e):
     start_job_btn["bg"] = "grey"
@@ -557,7 +570,7 @@ def start_job_btn_hover_leave(e):
 
 start_job_btn = Button(root, text="Start Job", command=lambda: threading.Thread(target=start_job).start(),
                        foreground="white", background="#8b0000", state=DISABLED)
-start_job_btn.grid(row=4, column=3, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
+start_job_btn.grid(row=5, column=3, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
 start_job_btn.bind("<Enter>", start_job_btn_hover)
 start_job_btn.bind("<Leave>", start_job_btn_hover_leave)
 
@@ -569,9 +582,48 @@ def command_line_btn_hover_leave(e):
 
 command_line_btn = Button(root, text="View Command", command=view_command, foreground="white", background="#8b0000",
                           state=DISABLED)
-command_line_btn.grid(row=4, column=0, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
+command_line_btn.grid(row=5, column=0, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
 command_line_btn.bind("<Enter>", command_line_btn_hover)
 command_line_btn.bind("<Leave>", command_line_btn_hover_leave)
+
+# Function and GUI button to 'Show All Formats' -----------------------------------------------------------------------
+def show_formats():
+    global download_link
+    command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
+    run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW, universal_newlines=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+    try:
+        global show_format_text
+        show_format_text.configure(state=NORMAL)
+        show_format_text.delete('1.0', END)
+        for line in run.stdout:
+            show_format_text.insert(END, line)
+        show_format_text.configure(state=DISABLED)
+    except:
+        stream_window = Toplevel()
+        stream_window.title("All Formats")
+        stream_window.configure(background="#434547")
+        Label(stream_window, text='- ' * 30 + 'Progress ' + '- ' * 30, font=("Times New Roman", 16),
+              background='#434547', foreground="white").grid(column=0, row=0)
+        show_format_text = scrolledtextwidget.ScrolledText(stream_window, width=120, height=35, tabs=10)
+        show_format_text.grid(column=0, pady=10, padx=10)
+        show_format_text.configure(state=NORMAL)
+        for line in run.stdout:
+            show_format_text.insert(END, line)
+        show_format_text.configure(state=DISABLED)
+
+def list_all_formats_hover(e):
+    list_all_formats["bg"] = "grey"
+
+def list_all_formats_hover_leave(e):
+    list_all_formats["bg"] = "#8b0000"
+
+list_all_formats = Button(root, text="Show All Formats", command=lambda: threading.Thread(target=show_formats).start(),
+                          foreground="white", background="#8b0000", state=DISABLED)
+list_all_formats.grid(row=5, column=1, columnspan=2, padx=10, pady=(15,15), sticky=N + S + W + E)
+list_all_formats.bind("<Enter>", list_all_formats_hover)
+list_all_formats.bind("<Leave>", list_all_formats_hover_leave)
+# -------------------------------------------------------------------------------------------------------- Show Formats
 
 # --------------------------------------------------------------------------------------------- Buttons and Entry Box's
 
