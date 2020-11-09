@@ -16,8 +16,9 @@ from tkinter import scrolledtext as scrolledtextwidget
 # root Gui & Windows --------------------------------------------------------
 
 def root_exit_function():  # Asks if the user is ready to exit
-    confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n\nThis "
-                                                               "will end all current taks.", parent=root)
+    confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n\n"
+                                                               "     Note: This will end all current tasks!",
+                                       parent=root)
     if confirm_exit == False:
         pass
     elif confirm_exit == True:
