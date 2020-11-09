@@ -450,10 +450,10 @@ def start_job():
         window.protocol('WM_DELETE_WINDOW', close_window)
         window.geometry("600x140")
         encode_window_progress = Text(window, height=2, relief=SUNKEN, bd=3)
-        encode_window_progress.grid(row=1, column=0, pady=(10, 6), padx=10, sticky=E + W)
+        encode_window_progress.grid(row=1, column=0, columnspan=2, pady=(10, 6), padx=10, sticky=E + W)
         encode_window_progress.insert(END, '')
         app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, mode='determinate')
-        app_progress_bar.grid(row=2, pady=(10, 10), padx=15, sticky=E + W)
+        app_progress_bar.grid(row=2, columnspan=2, pady=(10, 10), padx=15, sticky=E + W)
 
 
     if video_only.get() != 'on':
@@ -487,6 +487,7 @@ def start_job():
                 if playlist_amnt == '[download]':
                     amount = line.split()[2]
                     if amount == 'video':
+                        window.geometry("600x190")
                         modify_line = line.split()[1:]
                         total_file_progress = (', '.join(modify_line).replace(',', '').replace('video', 'file'))
                         progress_label = Label(window, text=total_file_progress, font=("Times New Roman", 14),
