@@ -54,7 +54,7 @@ elif shutil.which('youtube-dl') == None:
     youtube_dl_cli = '"' + str(pathlib.Path("Apps/FFMPEG/youtube-dl.exe")) + '"'
 
 if shutil.which('ffmpeg') != None:  # Checks if ffmpeg is located on windows PATH
-    ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path(shutil.which('ffmpeg'))) + ' '
+    ffmpeg_location = ' --ffmpeg-location ' + '"' + str(pathlib.Path(shutil.which('ffmpeg'))) + '"' + ' '
 elif shutil.which('ffmpeg') == None:
     ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path("Apps/FFMPEG/ffmpeg.exe")) + ' '
 
