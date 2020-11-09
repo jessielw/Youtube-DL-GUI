@@ -15,10 +15,9 @@ from tkinter import scrolledtext as scrolledtextwidget
 
 # root Gui & Windows --------------------------------------------------------
 
-def root_exit_function():
+def root_exit_function():  # Asks if the user is ready to exit
     confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n\nThis "
-                                                               "will end all current taks.",
-                                       parent=root)
+                                                               "will end all current taks.", parent=root)
     if confirm_exit == False:
         pass
     elif confirm_exit == True:
@@ -28,7 +27,7 @@ def root_exit_function():
         except:
             root.destroy()
 
-root = Tk()
+root = Tk()  # Main UI window
 root.title("Youtube-DL-Gui v1.1")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
@@ -41,31 +40,34 @@ y_coordinate = int((screen_height / 2) - (window_height / 2))
 root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
 root.protocol('WM_DELETE_WINDOW', root_exit_function)
 
-for n in range(4):
+for n in range(4): # Loop to specify the needed column/row configures
     root.grid_columnconfigure(n, weight=1)
 for n in range(5):
     root.grid_rowconfigure(n, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
 
-if shutil.which('youtube-dl') != None:
+if shutil.which('youtube-dl') != None:  # Checks if youtube-dl is located on windows PATH
     youtube_dl_cli = '"' + str(pathlib.Path(shutil.which('youtube-dl'))) + '"'
 elif shutil.which('youtube-dl') == None:
     youtube_dl_cli = '"' + str(pathlib.Path("Apps/FFMPEG/youtube-dl.exe")) + '"'
 
-if shutil.which('ffmpeg') != None:
+if shutil.which('ffmpeg') != None:  # Checks if ffmpeg is located on windows PATH
     ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path(shutil.which('ffmpeg'))) + ' '
 elif shutil.which('ffmpeg') == None:
     ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path("Apps/FFMPEG/ffmpeg.exe")) + ' '
 
 # --------------------------------------------------------------- Bundled Apps
 
+# Updates youtube-dl.exe -------------------------------------
 def check_for_update():
     command = '"' + youtube_dl_cli + '" --update'
     if shell_options.get() == 'Default':
         subprocess.Popen('cmd /c' + command)
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
+
+#  ------------------------------------- Updates youtube-dl.exe
 
 # Menu Items and Sub-Bars ---------------------------------------------------------------------------------------------
 my_menu_bar = Menu(root, tearoff=0)
@@ -421,7 +423,7 @@ def view_command():
 
 # Start Job -----------------------------------------------------------------------------------------------------------
 def start_job():
-    if shell_options.get() == 'Default': # This allows the program to spawn new windows and provide real time progress
+    if shell_options.get() == 'Default':  # This allows the program to spawn new windows and provide real time progress
         def close_encode():
             confirm_exit = messagebox.askyesno(title='Prompt',
                                                message="Are you sure you want to stop progress?", parent=window)
