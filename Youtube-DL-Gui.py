@@ -12,6 +12,7 @@ import threading
 from tkinter import messagebox
 from Packages.about import openaboutwindow
 from tkinter import scrolledtext as scrolledtextwidget
+from configparser import ConfigParser
 
 # root Gui & Windows --------------------------------------------------------
 
@@ -29,7 +30,7 @@ def root_exit_function():  # Asks if the user is ready to exit
             root.destroy()
 
 root = Tk()  # Main UI window
-root.title("Youtube-DL-Gui v1.1")
+root.title("Youtube-DL-Gui v1.2")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 680
@@ -47,16 +48,26 @@ for n in range(5):
     root.grid_rowconfigure(n, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
+config_file = 'Runtime/config.ini'  # Creates (if doesn't exist) and defines location of config.ini
+config = ConfigParser()
+config.read(config_file)
 
+try:  # Create config parameters
+    config.add_section('ffmpeg_path')
+    config.set('ffmpeg_path', 'path', '')
+    config.add_section('youtubedl_path')
+    config.set('youtubedl_path', 'path', '')
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+except:
+    pass
+
+ffmpeg = config['ffmpeg_path']['path']
+youtube_dl_cli = config['youtubedl_path']['path']
 if shutil.which('youtube-dl') != None:  # Checks if youtube-dl is located on windows PATH
     youtube_dl_cli = '"' + str(pathlib.Path(shutil.which('youtube-dl'))) + '"'
 elif shutil.which('youtube-dl') == None:
     youtube_dl_cli = '"' + str(pathlib.Path("Apps/FFMPEG/youtube-dl.exe")) + '"'
-
-if shutil.which('ffmpeg') != None:  # Checks if ffmpeg is located on windows PATH
-    ffmpeg_location = ' --ffmpeg-location ' + '"' + str(pathlib.Path(shutil.which('ffmpeg'))) + '"' + ' '
-elif shutil.which('ffmpeg') == None:
-    ffmpeg_location = ' --ffmpeg-location ' + str(pathlib.Path("Apps/FFMPEG/ffmpeg.exe")) + ' '
 
 # --------------------------------------------------------------- Bundled Apps
 
@@ -87,6 +98,54 @@ shell_options = StringVar()
 shell_options.set('Default')
 options_submenu.add_radiobutton(label='Shell Closes Automatically', variable=shell_options, value="Default")
 options_submenu.add_radiobutton(label='Shell Stays Open (Debug)', variable=shell_options, value="Debug")
+options_menu.add_separator()
+
+def set_ffmpeg_path():
+    global ffmpeg
+    path = filedialog.askopenfilename(title='Select Location to "ffmpeg.exe"', initialdir='/',
+                                      filetypes=[('ffmpeg', 'ffmpeg.exe')])
+    if path == '':
+        pass
+    elif path != '':
+        ffmpeg = '"' + str(pathlib.Path(path)) + '"'
+        config.set('ffmpeg_path', 'path', ffmpeg)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+    print(path)
+
+options_menu.add_command(label='Set path to FFMPEG', command=set_ffmpeg_path)
+
+def set_youtubedl_path():
+    global youtube_dl_cli
+    path = filedialog.askopenfilename(title='Select Location to "youtube-dl.exe"', initialdir='/',
+                                      filetypes=[('youtube-dl', 'youtube-dl.exe')])
+    if path == '':
+        pass
+    elif path != '':
+        youtube_dl_cli = '"' + str(pathlib.Path(path)) + '"'
+        config.set('youtubedl_path', 'path', youtube_dl_cli)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+
+options_menu.add_command(label='Set path to youtube-dl', command=set_youtubedl_path)
+options_menu.add_separator()
+
+def reset_config():
+    msg = messagebox.askyesno(title='Warning', message='Are you sure you want to reset the config.ini file settings?')
+    if msg == False:
+       pass
+    if msg == True:
+        try:
+            config.set('ffmpeg_path', 'path', '')
+            config.set('youtubedl_path', 'path', '')
+            with open(config_file, 'w') as configfile:
+                config.write(configfile)
+            messagebox.showinfo(title='Prompt', message='Please restart the program')
+        except:
+            pass
+        root.destroy()
+
+options_menu.add_command(label='Reset Configuration File', command=reset_config)
 
 tools_submenu = Menu(my_menu_bar, tearoff=0, activebackground='dim grey')
 my_menu_bar.add_cascade(label='Tools', menu=tools_submenu)
@@ -629,8 +688,59 @@ list_all_formats.grid(row=5, column=1, columnspan=2, padx=10, pady=(15,15), stic
 list_all_formats.bind("<Enter>", list_all_formats_hover)
 list_all_formats.bind("<Leave>", list_all_formats_hover_leave)
 # -------------------------------------------------------------------------------------------------------- Show Formats
-
 # --------------------------------------------------------------------------------------------- Buttons and Entry Box's
+
+# Checks config for bundled app paths path ---------------
+def check_ffmpeg():
+    global ffmpeg
+    # FFMPEG --------------------------------------------------------------
+    if shutil.which('ffmpeg') != None:
+        ffmpeg = '"' + str(pathlib.Path(shutil.which('ffmpeg'))).lower() + '"'
+        messagebox.showinfo(title='Prompt!', message='ffmpeg.exe found on system PATH, '
+                                                     'automatically setting path to location.\n\n'
+                                                     'Note: This can be changed in the config.ini file'
+                                                     ' or in the Options menu')
+        if pathlib.Path("Apps/ffmpeg/ffmpeg.exe").exists():
+            rem_ffmpeg = messagebox.askyesno(title='Delete Included ffmpeg?',
+                                             message='Would you like to delete the included FFMPEG?')
+            if rem_ffmpeg == True:
+                try:
+                    shutil.rmtree(str(pathlib.Path("Apps/ffmpeg")))
+                except:
+                    pass
+        config.set('ffmpeg_path', 'path', ffmpeg)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+    elif ffmpeg == '' and shutil.which('ffmpeg') == None:
+        messagebox.showinfo(title='Info', message='Program will use the included '
+                                                  '"ffmpeg.exe" located in the "Apps" folder')
+        ffmpeg = '"' + str(pathlib.Path("Apps/ffmpeg/ffmpeg.exe")) + '"'
+        try:
+            config.set('ffmpeg_path', 'path', ffmpeg)
+            with open(config_file, 'w') as configfile:
+                config.write(configfile)
+        except:
+            pass
+    # FFMPEG ------------------------------------------------------------------
+
+def check_youtubedl():
+    global youtube_dl_cli
+    # youtubeDL cli -------------------------------------------------------------
+    if youtube_dl_cli == '' or not pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
+        youtube_dl_cli = '"' + str(pathlib.Path('Apps/youtube-dl/youtube-dl.exe')) + '"'
+        try:
+            config.set('youtubedl_path', 'path', youtube_dl_cli)
+            with open(config_file, 'w') as configfile:
+                config.write(configfile)
+        except:
+            pass
+    # youtubeDL cli ----------------------------------------------------------
+
+if config['ffmpeg_path']['path'] == '' or not pathlib.Path(ffmpeg.replace('"', '')).exists():
+    check_ffmpeg()
+if config['youtubedl_path']['path'] == '' or not pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
+    check_youtubedl()
+
 
 # End Loop ------------------------------------------------------------------------------------------------------------
 root.mainloop()
