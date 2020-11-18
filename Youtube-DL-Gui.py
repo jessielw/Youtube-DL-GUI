@@ -525,7 +525,7 @@ def start_job():
     elif video_only.get() == 'on':
         audio_format_selection = ''
         audio_quality_selection = ''
-    command = '"' + youtube_dl_cli + ffmpeg_location + '--console-title ' + audio_format_selection \
+    command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title ' + audio_format_selection \
               + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
               + no_continue.get() + no_part.get() + yt_subtitle.get() \
               + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
