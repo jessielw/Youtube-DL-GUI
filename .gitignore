@@ -5,3 +5,4 @@ build
 dist
 Youtube-DL-Gui.spec
 Apps/
+config.ini
