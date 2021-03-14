@@ -1,17 +1,14 @@
 # Imports--------------------------------------------------------------------
 
-from tkinter import *
-from tkinter import filedialog, StringVar
-from tkinter import ttk
+from tkinter import (filedialog, StringVar, Tk ,Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END, DISABLED,
+                     Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel,
+                     Text, SUNKEN, HORIZONTAL, WORD, Entry, Button)
 import subprocess
-from tkinter import scrolledtext
 import pyperclip
 import shutil
 import pathlib
 import threading
-from tkinter import messagebox
-from Packages.about import openaboutwindow
-from tkinter import scrolledtext as scrolledtextwidget
+from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
 
 # root Gui & Windows --------------------------------------------------------
@@ -64,10 +61,6 @@ except:
 
 ffmpeg = config['ffmpeg_path']['path']
 youtube_dl_cli = config['youtubedl_path']['path']
-if shutil.which('youtube-dl') != None:  # Checks if youtube-dl is located on windows PATH
-    youtube_dl_cli = '"' + str(pathlib.Path(shutil.which('youtube-dl'))) + '"'
-elif shutil.which('youtube-dl') == None:
-    youtube_dl_cli = '"' + str(pathlib.Path("Apps/FFMPEG/youtube-dl.exe")) + '"'
 
 # --------------------------------------------------------------- Bundled Apps
 
@@ -669,7 +662,7 @@ def show_formats():
         stream_window.configure(background="#434547")
         Label(stream_window, text='- ' * 30 + 'Progress ' + '- ' * 30, font=("Times New Roman", 16),
               background='#434547', foreground="white").grid(column=0, row=0)
-        show_format_text = scrolledtextwidget.ScrolledText(stream_window, width=120, height=35, tabs=10)
+        show_format_text = scrolledtext.ScrolledText(stream_window, width=120, height=35, tabs=10)
         show_format_text.grid(column=0, pady=10, padx=10)
         show_format_text.configure(state=NORMAL)
         for line in run.stdout:
