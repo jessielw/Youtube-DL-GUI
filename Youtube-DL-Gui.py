@@ -742,15 +742,64 @@ if config['youtubedl_path']['path'] == '' or not pathlib.Path(youtube_dl_cli.rep
     check_youtubedl()
 
 # Checks if needed executables are found by the program -----------------------------------------
+def open_dl_window():
+    global window_message
+    window_message = Toplevel(master=root)
+    window_message.title('Download')
+    window_message.configure(background="#434547")
+    window_height = 80
+    window_width = 340
+    screen_width = window_message.winfo_screenwidth()
+    screen_height = window_message.winfo_screenheight()
+    x_coordinate = int((screen_width / 2) - (window_width / 2))
+    y_coordinate = int((screen_height / 2) - (window_height / 2))
+    window_message.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
+    
 # FFMPEG check -------------------------------------------------------------------
 if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
     ffmpeg_error = messagebox.askyesnocancel(parent=root, title='FFMPEG Not Found',
                                           message="            Navigate to 'ffmpeg.exe'\n\n"
                                                   "If you do not have it select 'No' to download")
     if ffmpeg_error == False:
-        webbrowser.open('https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z', new=2)
-        messagebox.showinfo(message="Extract 'ffmpeg.exe' from archive and restart the program to set path to ffmpeg")
-        root.destroy()
+        def download_ytdl():
+            app_progress_bar = ttk.Progressbar(window_message, orient=HORIZONTAL, mode='determinate', )
+            app_progress_bar.pack(fill='x', expand=True, padx=10)  # spawns progress bar
+            def Download_Progress(block_num, block_size, total_size):
+                progress = int((block_num * block_size / total_size) * 100)
+                app_progress_bar['value'] = int(progress)  # get download progress and convert it into the visual bar
+
+            pathlib.Path('Apps/temp').mkdir(parents=True, exist_ok=True)
+            urllib.request.urlretrieve('https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z',
+                                       'Apps/temp/ffmpeg-git-full.7z', reporthook=Download_Progress)
+            sleep(2)
+            lbl.configure(text='Extracting ffmpeg.exe')
+            app_progress_bar['value'] = int(0)
+            sleep(2)
+            command = '"' + '"Apps/7z/7za.exe" e ' \
+                      + '"Apps/temp/ffmpeg-git-full.7z" "-oApps/ffmpeg" ffmpeg.exe -r' + '"'
+            subprocess.Popen('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW)
+            app_progress_bar['value'] = int(50)
+            sleep(1)
+            app_progress_bar['value'] = int(100)
+            lbl.configure(text='Extraction Complete!')
+            sleep(1)
+            check_ffmpeg()
+            if pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
+                lbl.configure(text=config['ffmpeg_path']['path'])
+                sleep(2)
+                window_message.destroy()
+                root.deiconify()  # Confirms that it's now on the path, closes download window re-opens root
+            if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
+                messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
+            shutil.rmtree('Apps/temp', ignore_errors=True)
+
+        open_dl_window()
+        lbl = Label(window_message, text='Downloading ffmpeg.7z', bg='#434547', fg='white', font=(None, 18))
+        lbl.pack(expand=True, fill='x', padx=10)  # Download window label
+        threading.Thread(target=download_ytdl).start()  # Starts the main above function in a thread
+        root.withdraw()  # 'Hides' the main gui (root)
+        sleep(1)  # Sleeps the program for 1 second
+
     elif ffmpeg_error == True:
         set_ffmpeg_path()
     elif ffmpeg_error == None:
@@ -785,16 +834,7 @@ if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file()
             if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
                 messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
 
-        window_message = Toplevel(master=root)
-        window_message.title('Download')
-        window_message.configure(background="#434547")
-        window_height = 80
-        window_width = 340
-        screen_width = window_message.winfo_screenwidth()
-        screen_height = window_message.winfo_screenheight()
-        x_coordinate = int((screen_width / 2) - (window_width / 2))
-        y_coordinate = int((screen_height / 2) - (window_height / 2))
-        window_message.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
+        open_dl_window()
         lbl = Label(window_message, text='Downloading youtube-dl', bg='#434547', fg='white', font=(None, 18))
         lbl.pack(expand=True, fill='x', padx=10)  # Download window label
         threading.Thread(target=download_ytdl).start()  # Starts the main above function in a thread
