@@ -1,18 +1,15 @@
 # Imports--------------------------------------------------------------------
 
-from tkinter import (filedialog, StringVar, Tk ,Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END, DISABLED,
-                     Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel,
-                     Text, SUNKEN, HORIZONTAL, WORD, Entry, Button)
-import subprocess
-import pyperclip
-import shutil
-import pathlib
-import threading
+from tkinter import (ttk, filedialog, StringVar, Tk, Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END, DISABLED,
+                     Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel, Text, SUNKEN, HORIZONTAL,
+                     WORD, Entry, Button)
+import subprocess, pyperclip, shutil, pathlib, threading, webbrowser, urllib.request
 from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
+from time import sleep
+# -------------------------------------------------------------------- Imports
 
-# root Gui & Windows --------------------------------------------------------
-
+# Root Gui & Windows ---------------------------------------------------------------------------------------
 def root_exit_function():  # Asks if the user is ready to exit
     confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n\n"
                                                                "     Note: This will end all current tasks!",
@@ -26,8 +23,9 @@ def root_exit_function():  # Asks if the user is ready to exit
         except:
             root.destroy()
 
-root = Tk()  # Main UI window
-root.title("Youtube-DL-Gui v1.2")
+# Main UI window ---------------------------------------------------------------------------------------------
+root = Tk()
+root.title("Youtube-DL-Gui v1.3")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 680
@@ -49,15 +47,19 @@ config_file = 'Runtime/config.ini'  # Creates (if doesn't exist) and defines loc
 config = ConfigParser()
 config.read(config_file)
 
-try:  # Create config parameters
+if not config.has_section('ffmpeg_path'):
     config.add_section('ffmpeg_path')
+if not config.has_option('ffmpeg_path', 'path'):
     config.set('ffmpeg_path', 'path', '')
+if not config.has_section('youtubedl_path'):
     config.add_section('youtubedl_path')
+if not config.has_option('youtubedl_path', 'path'):
     config.set('youtubedl_path', 'path', '')
+try:
     with open(config_file, 'w') as configfile:
         config.write(configfile)
 except:
-    pass
+    messagebox.showinfo(title='Error', message='Could Not Write to config.ini file\nDelete and Try Again')
 
 ffmpeg = config['ffmpeg_path']['path']
 youtube_dl_cli = config['youtubedl_path']['path']
@@ -68,7 +70,11 @@ youtube_dl_cli = config['youtubedl_path']['path']
 def check_for_update():
     command = '"' + youtube_dl_cli + '" --update'
     if shell_options.get() == 'Default':
-        subprocess.Popen('cmd /c' + command)
+        yt_update = subprocess.Popen('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW,
+                                       universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       stdin=subprocess.PIPE)
+        stdout, stderr = yt_update.communicate()
+        messagebox.showinfo(master=root, title='Info', message=str(stdout))
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
 
@@ -97,24 +103,25 @@ def set_ffmpeg_path():
     global ffmpeg
     path = filedialog.askopenfilename(title='Select Location to "ffmpeg.exe"', initialdir='/',
                                       filetypes=[('ffmpeg', 'ffmpeg.exe')])
-    if path == '':
-        pass
-    elif path != '':
+    if not path:  # Closes program if 'Cancel' is selected when defining the path with message
+        messagebox.askokcancel(title='Error', message='Program cannot fully function without ffmpeg!')
+        root.destroy()
+    if path:  # If 'Okay' is selected program will write path to ffmpeg to config.ini
         ffmpeg = '"' + str(pathlib.Path(path)) + '"'
         config.set('ffmpeg_path', 'path', ffmpeg)
         with open(config_file, 'w') as configfile:
             config.write(configfile)
-    print(path)
 
 options_menu.add_command(label='Set path to FFMPEG', command=set_ffmpeg_path)
 
 def set_youtubedl_path():
     global youtube_dl_cli
-    path = filedialog.askopenfilename(title='Select Location to "youtube-dl.exe"', initialdir='/',
+    path = filedialog.askopenfilename(parent=root, title='Select Location to "youtube-dl.exe"', initialdir='/',
                                       filetypes=[('youtube-dl', 'youtube-dl.exe')])
-    if path == '':
-        pass
-    elif path != '':
+    if not path:  # Closes program if 'Cancel' is selected when defining the path with message
+        messagebox.askyesno(parent=root, title='Error', message='Program cannot function without youtube-dl!')
+        root.destroy()
+    if path:  # If 'Okay' is selected program will write path to youtube-dl to config.ini
         youtube_dl_cli = '"' + str(pathlib.Path(path)) + '"'
         config.set('youtubedl_path', 'path', youtube_dl_cli)
         with open(config_file, 'w') as configfile:
@@ -734,6 +741,72 @@ if config['ffmpeg_path']['path'] == '' or not pathlib.Path(ffmpeg.replace('"', '
 if config['youtubedl_path']['path'] == '' or not pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
     check_youtubedl()
 
+# Checks if needed executables are found by the program -----------------------------------------
+# FFMPEG check -------------------------------------------------------------------
+if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
+    ffmpeg_error = messagebox.askyesnocancel(parent=root, title='FFMPEG Not Found',
+                                          message="            Navigate to 'ffmpeg.exe'\n\n"
+                                                  "If you do not have it select 'No' to download")
+    if ffmpeg_error == False:
+        webbrowser.open('https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z', new=2)
+        messagebox.showinfo(message="Extract 'ffmpeg.exe' from archive and restart the program to set path to ffmpeg")
+        root.destroy()
+    elif ffmpeg_error == True:
+        set_ffmpeg_path()
+    elif ffmpeg_error == None:
+        root.destroy()
+# -------------------------------------------------------------------- FFMPEG check
+
+# youtube-dl check ---------------------------------------------------------------------
+if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
+    youtubedl_error = messagebox.askyesnocancel(parent=root, title='youtube-dl Not Found',
+                                          message="                   Navigate to 'youtube-dl.exe'\n\n"
+                                                  "If you do not have it select 'No' to download automatically")
+    if youtubedl_error == False:  # If user selects 'No' on messagebox prompt
+        def download_ytdl():
+            app_progress_bar = ttk.Progressbar(window_message, orient=HORIZONTAL, mode='determinate', )
+            app_progress_bar.pack(fill='x', expand=True, padx=10)  # spawns progress bar
+            def Download_Progress(block_num, block_size, total_size):
+                progress = int((block_num * block_size / total_size) * 100)
+                app_progress_bar['value'] = int(progress)  # get download progress and convert it into the visual bar
+            try:
+                urllib.request.urlretrieve('https://youtube-dl.org/downloads/latest/youtube-dl.exe',
+                                       'Apps/youtube-dl/youtube-dl.exe', reporthook=Download_Progress)
+            except urllib.error.HTTPError:
+                messagebox.showinfo(parent=root, title='Info', message='Could Not Download youtube-dl.exe!!')
+                root.destroy()  # Tries to download latest youtube-dl from main website
+
+            check_youtubedl()  # Runs the function to write youtube-dl to path if needed again after download
+            if pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
+                lbl.configure(text='Downloaded Completed')
+                sleep(2)
+                window_message.destroy()
+                root.deiconify()  # Confirms that it's now on the path, closes download window re-opens root
+            if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
+                messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
+
+        window_message = Toplevel(master=root)
+        window_message.title('Download')
+        window_message.configure(background="#434547")
+        window_height = 80
+        window_width = 340
+        screen_width = window_message.winfo_screenwidth()
+        screen_height = window_message.winfo_screenheight()
+        x_coordinate = int((screen_width / 2) - (window_width / 2))
+        y_coordinate = int((screen_height / 2) - (window_height / 2))
+        window_message.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
+        lbl = Label(window_message, text='Downloading youtube-dl', bg='#434547', fg='white', font=(None, 18))
+        lbl.pack(expand=True, fill='x', padx=10)  # Download window label
+        threading.Thread(target=download_ytdl).start()  # Starts the main above function in a thread
+        root.withdraw()  # 'Hides' the main gui (root)
+        sleep(1)  # Sleeps the program for 1 second
+
+    elif youtubedl_error == True:
+        set_youtubedl_path()  # If user selects 'Yes,' this runs the function to define the path
+    elif youtubedl_error == None:
+        root.destroy()  # If user selects 'Cancel,' the main program closes
+# ----------------------------------------------------------------------------- youtube-dl check
+# Checks if needed executables are found by the program -----------------------------------------
 
 # End Loop ------------------------------------------------------------------------------------------------------------
 root.mainloop()
