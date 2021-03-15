@@ -25,7 +25,7 @@ def root_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 root = Tk()
-root.title("Youtube-DL-Gui v1.3")
+root.title("Youtube-DL-Gui v1.31")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 680
@@ -711,7 +711,7 @@ def check_ffmpeg():
         config.set('ffmpeg_path', 'path', ffmpeg)
         with open(config_file, 'w') as configfile:
             config.write(configfile)
-    elif ffmpeg == '' and shutil.which('ffmpeg') == None:
+    elif config['ffmpeg_path']['path'] == '' and shutil.which('ffmpeg') == None:
         messagebox.showinfo(title='Info', message='Program will use the included '
                                                   '"ffmpeg.exe" located in the "Apps" folder')
         ffmpeg = '"' + str(pathlib.Path("Apps/ffmpeg/ffmpeg.exe")) + '"'
@@ -754,40 +754,39 @@ def open_dl_window():
     x_coordinate = int((screen_width / 2) - (window_width / 2))
     y_coordinate = int((screen_height / 2) - (window_height / 2))
     window_message.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
-    
+
 # FFMPEG check -------------------------------------------------------------------
 if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
     ffmpeg_error = messagebox.askyesnocancel(parent=root, title='FFMPEG Not Found',
                                           message="            Navigate to 'ffmpeg.exe'\n\n"
                                                   "If you do not have it select 'No' to download")
-    if ffmpeg_error == False:
+    if ffmpeg_error == False:  # If ffmpeg_error msgbox 'No' is selected
         def download_ytdl():
             app_progress_bar = ttk.Progressbar(window_message, orient=HORIZONTAL, mode='determinate', )
             app_progress_bar.pack(fill='x', expand=True, padx=10)  # spawns progress bar
             def Download_Progress(block_num, block_size, total_size):
                 progress = int((block_num * block_size / total_size) * 100)
                 app_progress_bar['value'] = int(progress)  # get download progress and convert it into the visual bar
-
-            pathlib.Path('Apps/temp').mkdir(parents=True, exist_ok=True)
+            pathlib.Path('Apps/temp').mkdir(parents=True, exist_ok=True)  # Makes directory 'temp'
             urllib.request.urlretrieve('https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z',
-                                       'Apps/temp/ffmpeg-git-full.7z', reporthook=Download_Progress)
-            sleep(2)
-            lbl.configure(text='Extracting ffmpeg.exe')
-            app_progress_bar['value'] = int(0)
-            sleep(2)
+                                       'Apps/temp/ffmpeg-git-full.7z', reporthook=Download_Progress)  # Downloads .7z
+            sleep(2)  # Halts the program for 2 seconds
+            lbl.configure(text='Extracting ffmpeg.exe')  # Update label
+            app_progress_bar['value'] = int(0)  # Sets progress bar back to 0%
+            sleep(2)  # Halts the program for 2 seconds
             command = '"' + '"Apps/7z/7za.exe" e ' \
                       + '"Apps/temp/ffmpeg-git-full.7z" "-oApps/ffmpeg" ffmpeg.exe -r' + '"'
-            subprocess.Popen('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW)
-            app_progress_bar['value'] = int(50)
-            sleep(1)
-            app_progress_bar['value'] = int(100)
-            lbl.configure(text='Extraction Complete!')
-            sleep(1)
-            check_ffmpeg()
+            subprocess.Popen('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW)  # Command to extract .7z
+            app_progress_bar['value'] = int(50) # Pushes generic percentage to the progressbar
+            sleep(1) # Halts the program for 1 second
+            app_progress_bar['value'] = int(100)  # Pushes generic percentage to the progressbar
+            lbl.configure(text='Extraction Complete!')  # Updates label
+            sleep(1)  # Halts the program for 1 second
+            check_ffmpeg()  # Runs the check_ffmpeg to look for ffmpeg/write where it is to the config file
             if pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
-                lbl.configure(text=config['ffmpeg_path']['path'])
-                sleep(2)
-                window_message.destroy()
+                lbl.configure(text=config['ffmpeg_path']['path'])  # Uses the written config 'ffmpeg_path' on label
+                sleep(2)  # Halts the program for 2 seconds
+                window_message.destroy()  # Closes the download window
                 root.deiconify()  # Confirms that it's now on the path, closes download window re-opens root
             if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
                 messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
