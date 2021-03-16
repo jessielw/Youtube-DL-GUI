@@ -43,7 +43,7 @@ for n in range(5):
     root.grid_rowconfigure(n, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
-config_file = 'Runtime/config.ini'  # Creates (if doesn't exist) and defines location of config.ini
+config_file = 'Runtime/ytconfig.ini'  # Creates (if doesn't exist) and defines location of config.ini
 config = ConfigParser()
 config.read(config_file)
 
