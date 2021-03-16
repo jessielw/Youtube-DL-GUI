@@ -2,7 +2,7 @@
 
 from tkinter import (ttk, filedialog, StringVar, Tk, Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END, DISABLED,
                      Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel, Text, SUNKEN, HORIZONTAL,
-                     WORD, Entry, Button)
+                     WORD, Entry, Button, Frame)
 import subprocess, pyperclip, shutil, pathlib, threading, webbrowser, urllib.request
 from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
@@ -25,10 +25,10 @@ def root_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 root = Tk()
-root.title("Youtube-DL-Gui v1.31")
+root.title("Youtube-DL-Gui v1.32")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
-window_height = 680
+window_height = 500
 window_width = 720
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
@@ -159,7 +159,7 @@ help_menu.add_command(label="About", command=openaboutwindow)
 
 # Link Frame ----------------------------------------------------------------------------------------------------------
 link_frame = LabelFrame(root, text=' Paste Link ')
-link_frame.grid(row=0, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
+link_frame.grid(row=0, columnspan=4, sticky=E + W, padx=20, pady=(10,10))
 link_frame.configure(fg="white", bg="#434547", bd=3)
 
 link_frame.rowconfigure(1, weight=1)
@@ -168,44 +168,17 @@ link_frame.columnconfigure(1, weight=1)
 
 # ---------------------------------------------------------------------------------------------------------- Link Frame
 
-# General Frame ------------------------------------------------------------------------------------------------------
-general_frame = LabelFrame(root, text=' General Settings ')
-general_frame.grid(row=1, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
-general_frame.configure(fg="white", bg="#434547", bd=3)
+# Notebook Frame ------------------------------------------------------------------------------------------------------
+tabs = ttk.Notebook(root, height=200)
+tabs.grid(row=1, column=0, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10, 0))
+general_frame = Frame(tabs, background="#434547")
+video_frame = Frame(tabs, background="#434547")
+audio_frame = Frame(tabs, background="#434547")
+tabs.add(general_frame, text='  General Settings  ')
+tabs.add(video_frame, text='  Video Settings  ')
+tabs.add(audio_frame, text='  Audio Settings  ')
 
-general_frame.rowconfigure(0, weight=1)
-general_frame.rowconfigure(1, weight=1)
-general_frame.columnconfigure(0, weight=1)
-general_frame.columnconfigure(1, weight=1)
-general_frame.columnconfigure(2, weight=1)
-
-# ------------------------------------------------------------------------------------------------------- General Frame
-
-# Audio Frame ---------------------------------------------------------------------------------------------------------
-audio_frame = LabelFrame(root, text=' Audio Settings ')
-audio_frame.grid(row=3, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
-audio_frame.configure(fg="white", bg="#434547", bd=3)
-
-audio_frame.rowconfigure(0, weight=1)
-audio_frame.columnconfigure(0, weight=1)
-audio_frame.columnconfigure(1, weight=1)
-audio_frame.columnconfigure(2, weight=1)
-audio_frame.columnconfigure(3, weight=1)
-
-# --------------------------------------------------------------------------------------------------------- Audio Frame
-
-# Video Frame ---------------------------------------------------------------------------------------------------------
-video_frame = LabelFrame(root, text=' Video Settings ')
-video_frame.grid(row=2, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10,10))
-video_frame.configure(fg="white", bg="#434547", bd=3)
-
-# audio_frame.rowconfigure(0, weight=1)
-# audio_frame.columnconfigure(0, weight=1)
-# audio_frame.columnconfigure(1, weight=1)
-# audio_frame.columnconfigure(2, weight=1)
-# audio_frame.columnconfigure(3, weight=1)
-
-# --------------------------------------------------------------------------------------------------------- Video Frame
+# ------------------------------------------------------------------------------------------------------ Notebook Frame
 
 # Add Link to variable ------------------------------------------------------------------------------------------------
 def apply_link():
@@ -256,6 +229,7 @@ def set_video_only():
         audio_quality_menu.config(state=NORMAL)
         audio_quality.set('5 - Default')
         audio_quality_menu.config(state=DISABLED)
+        tabs.tab(2, state=DISABLED)
     elif video_only.get() != 'on':
         metadata_from_title_checkbox.config(state=NORMAL)
         metadata_from_title.set('')
@@ -265,6 +239,7 @@ def set_video_only():
         highest_quality_audio_only.set('')
         audio_quality_menu.config(state=NORMAL)
         audio_quality.set('5 - Default')
+        tabs.tab(2, state=NORMAL)
 
 # ------------------------------------------------------------------------------------------------- Audio Only Function
 def highest_quality_audio_only_toggle():
@@ -282,7 +257,7 @@ def highest_quality_audio_only_toggle():
 # Video Only Checkbutton ----------------------------------------------------------------------------------------------
 video_only = StringVar()
 video_only_checkbox = Checkbutton(video_frame, text='Best Video + Audio\nSingle File', variable=video_only, onvalue='on',
-                                   offvalue='', command=set_video_only)
+                                   offvalue='', command=set_video_only, takefocus=False)
 video_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=6, sticky=N + S + E + W)
 video_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
@@ -294,7 +269,7 @@ video_only.set('')
 highest_quality_audio_only = StringVar()
 highest_quality_audio_only_checkbox = Checkbutton(audio_frame, text='Extract Audio Only\nNo Encode',
                                                   variable=highest_quality_audio_only, onvalue='on', offvalue='',
-                                                  command=highest_quality_audio_only_toggle)
+                                                  command=highest_quality_audio_only_toggle, takefocus=False)
 highest_quality_audio_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=3,
                                          sticky=N + S + E + W)
 highest_quality_audio_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
@@ -306,7 +281,8 @@ highest_quality_audio_only.set("on")
 # Add Meta-Data From Title --------------------------------------------------------------------------------------------
 metadata_from_title = StringVar()
 metadata_from_title_checkbox = Checkbutton(audio_frame, text='Add Meta-Data\nFrom Title', variable=metadata_from_title,
-                                           onvalue='--add-metadata --metadata-from-title "%(artist)s" ', offvalue='')
+                                           onvalue='--add-metadata --metadata-from-title "%(artist)s" ', offvalue='',
+                                           takefocus=False)
 metadata_from_title_checkbox.grid(row=1, column=0, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 metadata_from_title_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
@@ -381,7 +357,7 @@ download_rate_menu.bind("<Leave>", download_rate_menu_hover_leave)
 # No Continue Checkbutton ---------------------------------------------------------------------------------------------
 no_continue = StringVar()
 no_continue_checkbox = Checkbutton(general_frame, text='Resume\nDownload', variable=no_continue,
-                                   onvalue='', offvalue='--no-continue ')
+                                   onvalue='', offvalue='--no-continue ', takefocus=False)
 no_continue_checkbox.grid(row=0, column=1, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 no_continue_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
@@ -392,7 +368,7 @@ no_continue.set('')
 # No Part Checkbutton -------------------------------------------------------------------------------------------------
 no_part = StringVar()
 no_part_checkbox = Checkbutton(general_frame, text="Don't Use\n.part Files", variable=no_part,
-                                   onvalue='--no-part ', offvalue='')
+                                   onvalue='--no-part ', offvalue='', takefocus=False)
 no_part_checkbox.grid(row=0, column=2, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 no_part_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
@@ -403,7 +379,7 @@ no_part.set('')
 # Youtube-Subtitle Checkbutton ----------------------------------------------------------------------------------------
 yt_subtitle = StringVar()
 yt_subtitle_checkbox = Checkbutton(general_frame, text="Auto Write Subs\n(Youtube Only / If Aval)",
-                                   variable=yt_subtitle, onvalue='--write-auto-sub ', offvalue='')
+                                   variable=yt_subtitle, onvalue='--write-auto-sub ', offvalue='' ,takefocus=False)
 yt_subtitle_checkbox.grid(row=1, column=1, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 yt_subtitle_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
