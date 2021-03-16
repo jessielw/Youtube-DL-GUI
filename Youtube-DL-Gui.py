@@ -3,7 +3,7 @@
 from tkinter import (ttk, filedialog, StringVar, Tk, Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END, DISABLED,
                      Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel, Text, SUNKEN, HORIZONTAL,
                      WORD, Entry, Button, Frame)
-import subprocess, pyperclip, shutil, pathlib, threading, webbrowser, urllib.request
+import subprocess, pyperclip, shutil, pathlib, threading, urllib.request
 from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
 from time import sleep
@@ -25,7 +25,7 @@ def root_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 root = Tk()
-root.title("Youtube-DL-Gui v1.32")
+root.title("Youtube-DL-Gui v1.33")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 500
@@ -387,6 +387,30 @@ yt_subtitle.set('')
 
 # ---------------------------------------------------------------------------------------------------- Youtube Subtitle
 
+# dl_playlist Checkbutton ---------------------------------------------------------------------------------------------
+dl_playlist = StringVar()
+dl_playlist_checkbox = Checkbutton(general_frame, text="Only Download Single\nFile From Playlist",
+                                   variable=dl_playlist, onvalue='--no-playlist', offvalue='--yes-playlist',
+                                   takefocus=False)
+dl_playlist_checkbox.grid(row=1, column=2, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
+dl_playlist_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+dl_playlist.set('--yes-playlist')
+
+# --------------------------------------------------------------------------------------------------------- dl_playlist
+
+# Skip Unavaliable Checkbutton ----------------------------------------------------------------------------------------
+ignore_errors = StringVar()
+ignore_errors_checkbox = Checkbutton(general_frame, text="Skip Unavailable\nVideos",
+                                   variable=ignore_errors, onvalue='-i', offvalue='',
+                                   takefocus=False)
+ignore_errors_checkbox.grid(row=2, column=2, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
+ignore_errors_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+ignore_errors.set('-i')
+
+# ---------------------------------------------------------------------------------------- Skip Unavaliable Checkbutton
+
 # Audio Quality Selection ---------------------------------------------------------------------------------------------
 def audio_quality_menu_hover(e):
     audio_quality_menu["bg"] = "grey"
@@ -434,8 +458,8 @@ def view_command():
     example_cmd_output = '--console-title ' \
                          + audio_format_selection + audio_quality_selection \
                          + download_rate_choices[download_rate.get()] + no_continue.get() + no_part.get() \
-                         + yt_subtitle.get() + metadata_from_title.get() \
-                         + '-o ' + '"' + '\n\n' + VideoOutput + '/%(title)s.%(ext)s' \
+                         + yt_subtitle.get() + metadata_from_title.get() + dl_playlist.get() + ' ' \
+                         + ignore_errors.get() + ' -o ' + '"' + '\n\n' + VideoOutput + '/%(title)s.%(ext)s' \
                          + '" ' + '\n\n' + download_link
 
     try:
@@ -503,8 +527,8 @@ def start_job():
         audio_quality_selection = ''
     command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title ' + audio_format_selection \
               + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
-              + no_continue.get() + no_part.get() + yt_subtitle.get() \
-              + '-o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
+              + no_continue.get() + no_part.get() + yt_subtitle.get() + dl_playlist.get() + ' ' + ignore_errors.get() \
+              + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
     if shell_options.get() == "Default":
         job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
