@@ -25,7 +25,7 @@ def root_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 root = Tk()
-root.title("Youtube-DL-Gui v1.33")
+root.title("Youtube-DL-Gui v1.34")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 500
@@ -60,6 +60,9 @@ try:
         config.write(configfile)
 except:
     messagebox.showinfo(title='Error', message='Could Not Write to config.ini file\nDelete and Try Again')
+
+pathlib.Path('Apps/youtube-dl').mkdir(parents=True, exist_ok=True)  # Make directory if needed
+pathlib.Path('Apps/ffmpeg').mkdir(parents=True, exist_ok=True)  # Make directory if needed
 
 ffmpeg = config['ffmpeg_path']['path']
 youtube_dl_cli = config['youtubedl_path']['path']
@@ -711,16 +714,16 @@ def check_ffmpeg():
         config.set('ffmpeg_path', 'path', ffmpeg)
         with open(config_file, 'w') as configfile:
             config.write(configfile)
-    elif config['ffmpeg_path']['path'] == '' and shutil.which('ffmpeg') == None:
+    elif pathlib.Path("Apps/ffmpeg/ffmpeg.exe").exists():
         messagebox.showinfo(title='Info', message='Program will use the included '
                                                   '"ffmpeg.exe" located in the "Apps" folder')
         ffmpeg = '"' + str(pathlib.Path("Apps/ffmpeg/ffmpeg.exe")) + '"'
-        try:
-            config.set('ffmpeg_path', 'path', ffmpeg)
-            with open(config_file, 'w') as configfile:
-                config.write(configfile)
-        except:
-            pass
+    try:
+        config.set('ffmpeg_path', 'path', ffmpeg)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+    except:
+        pass
     # FFMPEG ------------------------------------------------------------------
 
 def check_youtubedl():
@@ -742,26 +745,43 @@ if config['youtubedl_path']['path'] == '' or not pathlib.Path(youtube_dl_cli.rep
     check_youtubedl()
 
 # Checks if needed executables are found by the program -----------------------------------------
-def open_dl_window():
-    global window_message
-    window_message = Toplevel(master=root)
-    window_message.title('Download')
-    window_message.configure(background="#434547")
-    window_height = 80
-    window_width = 340
-    screen_width = window_message.winfo_screenwidth()
-    screen_height = window_message.winfo_screenheight()
-    x_coordinate = int((screen_width / 2) - (window_width / 2))
-    y_coordinate = int((screen_height / 2) - (window_height / 2))
-    window_message.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
+def downloadfiles():
+    def open_window():
+        global window_message
+        def dw_exit_function():
+            confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n"
+                                                                       "\nYou could potentially corrupt some required"
+                                                                       " applications\n\nIf this happens delete the "
+                                                                       "'Apps' folder and restart the program",
+                                               parent=root)
+            if confirm_exit == False:
+                pass
+            elif confirm_exit == True:
+                root.destroy()
 
-# FFMPEG check -------------------------------------------------------------------
-if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
-    ffmpeg_error = messagebox.askyesnocancel(parent=root, title='FFMPEG Not Found',
-                                          message="            Navigate to 'ffmpeg.exe'\n\n"
-                                                  "If you do not have it select 'No' to download")
-    if ffmpeg_error == False:  # If ffmpeg_error msgbox 'No' is selected
-        def download_ytdl():
+        window_message = Toplevel(master=root)
+        window_message.title('Download')
+        window_message.configure(background="#434547")
+        window_height = 80
+        window_width = 340
+        screen_width = window_message.winfo_screenwidth()
+        screen_height = window_message.winfo_screenheight()
+        x_coordinate = int((screen_width / 2) - (window_width / 2))
+        y_coordinate = int((screen_height / 2) - (window_height / 2))
+        window_message.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
+        window_message.protocol('WM_DELETE_WINDOW', dw_exit_function)
+        window_message.transient(root)
+        window_message.grab_set()
+
+    # FFMPEG check -------------------------------------------------------------------
+    if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
+        ffmpeg_error = messagebox.askyesnocancel(parent=root, title='FFMPEG Not Found',
+                                              message="            Navigate to 'ffmpeg.exe'\n\n"
+                                                      "If you do not have it select 'No' to download")
+        if ffmpeg_error == False:  # If ffmpeg_error msgbox 'No' is selected
+            open_window()
+            lbl = Label(window_message, text='Downloading ffmpeg.7z', bg='#434547', fg='white', font=(None, 18))
+            lbl.pack(expand=True, fill='x', padx=10)  # Download window label
             app_progress_bar = ttk.Progressbar(window_message, orient=HORIZONTAL, mode='determinate', )
             app_progress_bar.pack(fill='x', expand=True, padx=10)  # spawns progress bar
             def Download_Progress(block_num, block_size, total_size):
@@ -787,31 +807,25 @@ if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
                 lbl.configure(text=config['ffmpeg_path']['path'])  # Uses the written config 'ffmpeg_path' on label
                 sleep(2)  # Halts the program for 2 seconds
                 window_message.destroy()  # Closes the download window
-                root.deiconify()  # Confirms that it's now on the path, closes download window re-opens root
             if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
                 messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
             shutil.rmtree('Apps/temp', ignore_errors=True)
+        elif ffmpeg_error == True:  # If user selects 'Yes,' this runs the function to define the path
+            set_ffmpeg_path()
+        elif ffmpeg_error == None:
+            root.destroy()  # If user selects 'Cancel,' the main program closes
 
-        open_dl_window()
-        lbl = Label(window_message, text='Downloading ffmpeg.7z', bg='#434547', fg='white', font=(None, 18))
-        lbl.pack(expand=True, fill='x', padx=10)  # Download window label
-        threading.Thread(target=download_ytdl).start()  # Starts the main above function in a thread
-        root.withdraw()  # 'Hides' the main gui (root)
-        sleep(1)  # Sleeps the program for 1 second
+    # -------------------------------------------------------------------- FFMPEG check
 
-    elif ffmpeg_error == True:
-        set_ffmpeg_path()
-    elif ffmpeg_error == None:
-        root.destroy()
-# -------------------------------------------------------------------- FFMPEG check
-
-# youtube-dl check ---------------------------------------------------------------------
-if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
-    youtubedl_error = messagebox.askyesnocancel(parent=root, title='youtube-dl Not Found',
-                                          message="                   Navigate to 'youtube-dl.exe'\n\n"
-                                                  "If you do not have it select 'No' to download automatically")
-    if youtubedl_error == False:  # If user selects 'No' on messagebox prompt
-        def download_ytdl():
+    # youtube-dl check ---------------------------------------------------------------------
+    if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
+        youtubedl_error = messagebox.askyesnocancel(parent=root, title='youtube-dl Not Found',
+                                              message="                   Navigate to 'youtube-dl.exe'\n\n"
+                                                      "If you do not have it select 'No' to download automatically")
+        if youtubedl_error == False:  # If user selects 'No' on messagebox prompt
+            open_window()
+            lbl = Label(window_message, text='Downloading youtube-dl', bg='#434547', fg='white', font=(None, 18))
+            lbl.pack(expand=True, fill='x', padx=10)  # Download window label
             app_progress_bar = ttk.Progressbar(window_message, orient=HORIZONTAL, mode='determinate', )
             app_progress_bar.pack(fill='x', expand=True, padx=10)  # spawns progress bar
             def Download_Progress(block_num, block_size, total_size):
@@ -829,23 +843,25 @@ if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file()
                 lbl.configure(text='Downloaded Completed')
                 sleep(2)
                 window_message.destroy()
-                root.deiconify()  # Confirms that it's now on the path, closes download window re-opens root
             if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
                 messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
 
-        open_dl_window()
-        lbl = Label(window_message, text='Downloading youtube-dl', bg='#434547', fg='white', font=(None, 18))
-        lbl.pack(expand=True, fill='x', padx=10)  # Download window label
-        threading.Thread(target=download_ytdl).start()  # Starts the main above function in a thread
-        root.withdraw()  # 'Hides' the main gui (root)
-        sleep(1)  # Sleeps the program for 1 second
+        elif youtubedl_error == True:
+            set_youtubedl_path()  # If user selects 'Yes,' this runs the function to define the path
+        elif youtubedl_error == None:
+            root.destroy()  # If user selects 'Cancel,' the main program closes
 
-    elif youtubedl_error == True:
-        set_youtubedl_path()  # If user selects 'Yes,' this runs the function to define the path
-    elif youtubedl_error == None:
-        root.destroy()  # If user selects 'Cancel,' the main program closes
+    root.wm_attributes('-alpha', 1.0)  # Remove transparency at the end of download jobs
+
+
+if pathlib.Path(ffmpeg.replace('"', '')).exists() and pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
+    pass
+else:
+    root.wm_attributes('-alpha',0.5)  # Makes root transparent during download jobs
+    threading.Thread(target=downloadfiles, daemon=True).start()
 # ----------------------------------------------------------------------------- youtube-dl check
 # Checks if needed executables are found by the program -----------------------------------------
+
 
 # End Loop ------------------------------------------------------------------------------------------------------------
 root.mainloop()
