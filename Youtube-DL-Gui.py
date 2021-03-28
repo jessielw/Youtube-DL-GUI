@@ -2,7 +2,7 @@
 
 from tkinter import (ttk, filedialog, StringVar, Tk, Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END, DISABLED,
                      Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel, Text, SUNKEN, HORIZONTAL,
-                     WORD, Entry, Button, Frame)
+                     WORD, Entry, Button, Frame, Spinbox, CENTER)
 import subprocess, pyperclip, shutil, pathlib, threading, urllib.request
 from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
@@ -25,7 +25,7 @@ def root_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 root = Tk()
-root.title("Youtube-DL-Gui v1.34")
+root.title("Youtube-DL-Gui v1.35")
 root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 root.configure(background="#434547")
 window_height = 500
@@ -73,11 +73,10 @@ youtube_dl_cli = config['youtubedl_path']['path']
 def check_for_update():
     command = '"' + youtube_dl_cli + '" --update'
     if shell_options.get() == 'Default':
-        yt_update = subprocess.Popen('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW,
-                                       universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                       stdin=subprocess.PIPE)
-        stdout, stderr = yt_update.communicate()
-        messagebox.showinfo(master=root, title='Info', message=str(stdout))
+        root.wm_attributes('-alpha', 0.7)
+        yt_update = subprocess.check_output('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW)
+        messagebox.showinfo(master=root, title='Info', message=yt_update)
+        root.wm_attributes('-alpha', 1.0)
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
 
@@ -153,6 +152,36 @@ options_menu.add_command(label='Reset Configuration File', command=reset_config)
 tools_submenu = Menu(my_menu_bar, tearoff=0, activebackground='dim grey')
 my_menu_bar.add_cascade(label='Tools', menu=tools_submenu)
 tools_submenu.add_command(label="Check for Youtube-DL CLI updates", command=check_for_update)
+tools_submenu.add_separator()
+
+# Function and GUI button to 'Show All Formats' -----------------------------------------------------------------------
+def show_formats():
+    global download_link, stream_window
+    try:
+        command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
+        run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW, universal_newlines=True,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+        try:
+            stream_window.destroy()
+        except:
+            pass
+        stream_window = Toplevel()
+        stream_window.title("All Formats")
+        stream_window.configure(background="#434547")
+        Label(stream_window, text='- ' * 30 + 'Formats ' + '- ' * 30, font=("Times New Roman", 16),
+              background='#434547', foreground="white").grid(column=0, row=0)
+        show_format_text = scrolledtext.ScrolledText(stream_window, width=120, height=35, tabs=10)
+        show_format_text.grid(column=0, pady=10, padx=10)
+        show_format_text.configure(state=NORMAL)
+        for line in run.stdout:
+            show_format_text.insert(END, line)
+        show_format_text.configure(state=DISABLED)
+    except NameError:
+        messagebox.showerror(title='Error', message='Please Paste a Video Link First')
+
+# -------------------------------------------------------------------------------------------------------- Show Formats
+
+tools_submenu.add_command(label="List Avaliable Formats", command=show_formats)
 
 help_menu = Menu(my_menu_bar, tearoff=0, activebackground="dim grey")
 my_menu_bar.add_cascade(label="Help", menu=help_menu)
@@ -259,8 +288,8 @@ def highest_quality_audio_only_toggle():
 
 # Video Only Checkbutton ----------------------------------------------------------------------------------------------
 video_only = StringVar()
-video_only_checkbox = Checkbutton(video_frame, text='Best Video + Audio\nSingle File', variable=video_only, onvalue='on',
-                                   offvalue='', command=set_video_only, takefocus=False)
+video_only_checkbox = Checkbutton(video_frame, text='Best Video + Audio\nSingle File', variable=video_only,
+                                  onvalue='on', offvalue='', command=set_video_only, takefocus=False)
 video_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=6, sticky=N + S + E + W)
 video_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
@@ -486,6 +515,7 @@ def view_command():
 
 # Start Job -----------------------------------------------------------------------------------------------------------
 def start_job():
+    global custom_job, output_name, audio_spinbox_var, video_spinbox_var
     if shell_options.get() == 'Default':  # This allows the program to spawn new windows and provide real time progress
         def close_encode():
             confirm_exit = messagebox.askyesno(title='Prompt',
@@ -517,21 +547,27 @@ def start_job():
         app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, mode='determinate')
         app_progress_bar.grid(row=2, columnspan=2, pady=(10, 10), padx=15, sticky=E + W)
 
+    if custom_job == 'On':  # Code required for custom job selection
+        command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title' \
+                  + ' -o ' + '"' + output_name + '" ' + '-f ' + video_spinbox_var.get() \
+                  + '+' + audio_spinbox_var.get() + ' ' + '--merge-output-format mkv ' + download_link + '"'
 
-    if video_only.get() != 'on':
-        if highest_quality_audio_only.get() == 'on':
-            audio_format_selection = '--audio-format best -x '
+    if custom_job == 'Off':  # All jobs that aren't part of the custom job window
+        if video_only.get() != 'on':
+            if highest_quality_audio_only.get() == 'on':
+                audio_format_selection = '--audio-format best -x '
+                audio_quality_selection = ''
+            elif highest_quality_audio_only.get() != 'on':
+                audio_format_selection = audio_format_choices[audio_format.get()]
+                audio_quality_selection = audio_quality_choices[audio_quality.get()]
+        elif video_only.get() == 'on':
+            audio_format_selection = ''
             audio_quality_selection = ''
-        elif highest_quality_audio_only.get() != 'on':
-            audio_format_selection = audio_format_choices[audio_format.get()]
-            audio_quality_selection = audio_quality_choices[audio_quality.get()]
-    elif video_only.get() == 'on':
-        audio_format_selection = ''
-        audio_quality_selection = ''
-    command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title ' + audio_format_selection \
-              + audio_quality_selection + metadata_from_title.get() + download_rate_choices[download_rate.get()] \
-              + no_continue.get() + no_part.get() + yt_subtitle.get() + dl_playlist.get() + ' ' + ignore_errors.get() \
-              + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
+        command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title ' \
+                  + audio_format_selection + audio_quality_selection + metadata_from_title.get() \
+                  + download_rate_choices[download_rate.get()] + no_continue.get() + no_part.get() \
+                  + yt_subtitle.get() + dl_playlist.get() + ' ' + ignore_errors.get() \
+                  + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
     if shell_options.get() == "Default":
         job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
@@ -635,7 +671,12 @@ def start_job_btn_hover(e):
 def start_job_btn_hover_leave(e):
     start_job_btn["bg"] = "#8b0000"
 
-start_job_btn = Button(root, text="Start Job", command=lambda: threading.Thread(target=start_job).start(),
+def normal_job_start():  # Sets the custom_job variable and starts the job process
+    global custom_job
+    custom_job = 'Off'
+    threading.Thread(target=start_job).start()
+
+start_job_btn = Button(root, text="Start Job", command=normal_job_start,
                        foreground="white", background="#8b0000", state=DISABLED)
 start_job_btn.grid(row=5, column=3, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
 start_job_btn.bind("<Enter>", start_job_btn_hover)
@@ -653,44 +694,85 @@ command_line_btn.grid(row=5, column=0, columnspan=1, padx=10, pady=(15,15), stic
 command_line_btn.bind("<Enter>", command_line_btn_hover)
 command_line_btn.bind("<Leave>", command_line_btn_hover_leave)
 
-# Function and GUI button to 'Show All Formats' -----------------------------------------------------------------------
-def show_formats():
-    global download_link
-    command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
-    run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW, universal_newlines=True,
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
-    try:
-        global show_format_text
-        show_format_text.configure(state=NORMAL)
-        show_format_text.delete('1.0', END)
-        for line in run.stdout:
-            show_format_text.insert(END, line)
-        show_format_text.configure(state=DISABLED)
-    except:
-        stream_window = Toplevel()
-        stream_window.title("All Formats")
-        stream_window.configure(background="#434547")
-        Label(stream_window, text='- ' * 30 + 'Progress ' + '- ' * 30, font=("Times New Roman", 16),
-              background='#434547', foreground="white").grid(column=0, row=0)
-        show_format_text = scrolledtext.ScrolledText(stream_window, width=120, height=35, tabs=10)
-        show_format_text.grid(column=0, pady=10, padx=10)
-        show_format_text.configure(state=NORMAL)
-        for line in run.stdout:
-            show_format_text.insert(END, line)
-        show_format_text.configure(state=DISABLED)
-
 def list_all_formats_hover(e):
     list_all_formats["bg"] = "grey"
 
 def list_all_formats_hover_leave(e):
     list_all_formats["bg"] = "#8b0000"
 
-list_all_formats = Button(root, text="Show All Formats", command=lambda: threading.Thread(target=show_formats).start(),
+# Function and GUI button to 'Show All Formats' -----------------------------------------------------------------------
+def custom_format():
+    global download_link, stream_window, audio_spinbox_var, video_spinbox_var
+    try:
+        command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
+        run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW, universal_newlines=True,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+        try:
+            stream_window.destroy()
+        except:
+            pass
+        stream_window = Toplevel()
+        stream_window.title('Custom Download Options')
+        stream_window.configure(background="#434547")
+        show_format_text = scrolledtext.ScrolledText(stream_window, width=120, height=25, tabs=10)
+        show_format_text.grid(column=0, pady=10, padx=10, row=1, columnspan=3)
+        show_format_text.configure(state=NORMAL)
+        show_format_text.insert(END, '- - - - - Match the format code on the left '
+                                     'in the video/audio boxes for desired outcome - - - - -\n\n\n', 'centered')
+        show_format_text.tag_configure("centered", justify="center", font=("Times New Roman", 16))
+        v_label = Label(stream_window, text='Video Selction', background='#434547', foreground="white")
+        v_label.grid(column=1, row=2, columnspan=2)
+        a_label = Label(stream_window, text='Audio Selction', background='#434547', foreground="white")
+        a_label.grid(column=2, row=2, columnspan=1)
+        video_spinbox_var = StringVar()
+        video_spinbox = Spinbox(stream_window, from_=0, to=1000, increment=1.0, justify=CENTER,
+                                             wrap=True, textvariable=video_spinbox_var)
+        video_spinbox.configure(background="#23272A", foreground="white", highlightthickness=1,
+                                             buttonbackground="#8b0000", width=15, readonlybackground="#23272A")
+        video_spinbox.grid(row=3, column=1, columnspan=2, padx=10, pady=3)
+        audio_spinbox_var = StringVar()
+        audio_spinbox = Spinbox(stream_window, from_=0, to=1000, increment=1.0, justify=CENTER,
+                                wrap=True, textvariable=audio_spinbox_var)
+        audio_spinbox.configure(background="#23272A", foreground="white", highlightthickness=1,
+                                buttonbackground="#8b0000", width=15, readonlybackground="#23272A")
+        audio_spinbox.grid(row=3, column=2, columnspan=1, padx=10, pady=3)
+
+        def start_audio_job_custom():
+            global custom_job, output_name
+            custom_job = 'On'
+            output_name = filedialog.asksaveasfilename(parent=stream_window, title='Save File Name', initialdir='/',
+                                                       initialfile='Custom_Download', defaultextension='')
+            if output_name:
+                threading.Thread(target=start_job).start()
+
+        start_custom_button = Button(stream_window, text="Start Audio Job",
+                                     command=start_audio_job_custom, foreground="white", background="#8b0000",
+                                     borderwidth="3")
+        start_custom_button.grid(row=3, column=2, columnspan=3, padx=10, pady=5, sticky=E)
+
+        def start_custom_button_hover(e):
+            start_custom_button["bg"] = "grey"
+
+        def start_custom_button_hover_leave(e):
+            start_custom_button["bg"] = "#8b0000"
+
+        start_custom_button.bind("<Enter>", start_custom_button_hover)
+        start_custom_button.bind("<Leave>", start_custom_button_hover_leave)
+
+        for line in run.stdout:
+            show_format_text.insert(END, line)
+        show_format_text.configure(state=DISABLED)
+    except NameError:
+        messagebox.showerror(title='Error', message='Please Paste a Video Link First')
+
+# -------------------------------------------------------------------------------------------------------- Show Formats
+
+list_all_formats = Button(root, text="Custom Download", command=lambda: threading.Thread(target=custom_format).start(),
                           foreground="white", background="#8b0000", state=DISABLED)
 list_all_formats.grid(row=5, column=1, columnspan=2, padx=10, pady=(15,15), sticky=N + S + W + E)
 list_all_formats.bind("<Enter>", list_all_formats_hover)
 list_all_formats.bind("<Leave>", list_all_formats_hover_leave)
-# -------------------------------------------------------------------------------------------------------- Show Formats
+
 # --------------------------------------------------------------------------------------------- Buttons and Entry Box's
 
 # Checks config for bundled app paths path ---------------
