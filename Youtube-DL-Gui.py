@@ -758,9 +758,10 @@ def custom_format():
 
         start_custom_button.bind("<Enter>", start_custom_button_hover)
         start_custom_button.bind("<Leave>", start_custom_button_hover_leave)
-
         for line in run.stdout:
             show_format_text.insert(END, line)
+            show_format_text.insert(END, '-------------------------' * 6 + '\n', 'boldfont')
+            show_format_text.tag_configure("boldfont", font=("ArialBlack"))
         show_format_text.configure(state=DISABLED)
     except NameError:
         messagebox.showerror(title='Error', message='Please Paste a Video Link First')
