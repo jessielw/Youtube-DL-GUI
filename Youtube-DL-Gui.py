@@ -1,46 +1,45 @@
 # Imports--------------------------------------------------------------------
-
-from tkinter import (ttk, filedialog, StringVar, Tk, Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END, DISABLED,
-                     Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel, Text, SUNKEN, HORIZONTAL,
-                     WORD, Entry, Button, Frame, Spinbox, CENTER)
+from tkinter import (filedialog, StringVar, Tk, Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END,
+                     DISABLED, Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel, Text, SUNKEN,
+                     HORIZONTAL, WORD, Entry, Button, Frame, Spinbox, CENTER)
 import subprocess, pyperclip, shutil, pathlib, threading, urllib.request
 from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
 from time import sleep
 # -------------------------------------------------------------------- Imports
 
-# Root Gui & Windows ---------------------------------------------------------------------------------------
-def root_exit_function():  # Asks if the user is ready to exit
+# Main Gui & Windows ---------------------------------------------------------------------------------------
+def main_exit_function():  # Asks if the user is ready to exit
     confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n\n"
                                                                "     Note: This will end all current tasks!",
-                                       parent=root)
+                                       parent=main)
     if confirm_exit == False:
         pass
     elif confirm_exit == True:
         try:
             subprocess.Popen(f"TASKKILL /F /im Youtube-DL-GUi.exe /T", creationflags=subprocess.CREATE_NO_WINDOW)
-            root.destroy()
+            main.destroy()
         except:
-            root.destroy()
+            main.destroy()
 
 # Main UI window ---------------------------------------------------------------------------------------------
-root = Tk()
-root.title("Youtube-DL-Gui v1.35")
-root.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
-root.configure(background="#434547")
+main = Tk()
+main.title("Youtube-DL-Gui v1.35.3")
+main.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
+main.configure(background="#434547")
 window_height = 500
 window_width = 720
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
+screen_width = main.winfo_screenwidth()
+screen_height = main.winfo_screenheight()
 x_coordinate = int((screen_width / 2) - (window_width / 2))
 y_coordinate = int((screen_height / 2) - (window_height / 2))
-root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
-root.protocol('WM_DELETE_WINDOW', root_exit_function)
+main.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+main.protocol('WM_DELETE_WINDOW', main_exit_function)
 
-for n in range(4): # Loop to specify the needed column/row configures
-    root.grid_columnconfigure(n, weight=1)
+for n in range(4):  # Loop to specify the needed column/row configures
+    main.grid_columnconfigure(n, weight=1)
 for n in range(5):
-    root.grid_rowconfigure(n, weight=1)
+    main.grid_rowconfigure(n, weight=1)
 
 # Bundled Apps ---------------------------------------------------------------
 config_file = 'Runtime/ytconfig.ini'  # Creates (if doesn't exist) and defines location of config.ini
@@ -59,7 +58,7 @@ try:
     with open(config_file, 'w') as configfile:
         config.write(configfile)
 except:
-    messagebox.showinfo(title='Error', message='Could Not Write to config.ini file\nDelete and Try Again')
+    messagebox.showinfo(parent=main, title='Error', message='Could Not Write to config.ini file\nDelete and Try Again')
 
 pathlib.Path('Apps/youtube-dl').mkdir(parents=True, exist_ok=True)  # Make directory if needed
 pathlib.Path('Apps/ffmpeg').mkdir(parents=True, exist_ok=True)  # Make directory if needed
@@ -73,41 +72,44 @@ youtube_dl_cli = config['youtubedl_path']['path']
 def check_for_update():
     command = '"' + youtube_dl_cli + '" --update'
     if shell_options.get() == 'Default':
-        root.wm_attributes('-alpha', 0.7)
+        main.wm_attributes('-alpha', 0.7)
         yt_update = subprocess.check_output('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW)
-        messagebox.showinfo(master=root, title='Info', message=yt_update)
-        root.wm_attributes('-alpha', 1.0)
+        messagebox.showinfo(parent=main, title='Info', message=yt_update)
+        main.wm_attributes('-alpha', 1.0)
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
 
 #  ------------------------------------- Updates youtube-dl.exe
 
 # Menu Items and Sub-Bars ---------------------------------------------------------------------------------------------
-my_menu_bar = Menu(root, tearoff=0)
-root.config(menu=my_menu_bar)
+my_menu_bar = Menu(main, tearoff=0)
+main.config(menu=my_menu_bar)
 
 file_menu = Menu(my_menu_bar, tearoff=0, activebackground='dim grey')
 my_menu_bar.add_cascade(label='File', menu=file_menu)
-file_menu.add_command(label='Exit', command=root_exit_function)
+file_menu.add_command(label='Exit', command=main_exit_function)
 
 options_menu = Menu(my_menu_bar, tearoff=0, activebackground='dim grey')
 my_menu_bar.add_cascade(label='Options', menu=options_menu)
 
-options_submenu = Menu(root, tearoff=0, activebackground='dim grey')
+options_submenu = Menu(main, tearoff=0, activebackground='dim grey')
 options_menu.add_cascade(label='Shell Options', menu=options_submenu)
 shell_options = StringVar()
 shell_options.set('Default')
-options_submenu.add_radiobutton(label='Shell Closes Automatically', variable=shell_options, value="Default")
-options_submenu.add_radiobutton(label='Shell Stays Open (Debug)', variable=shell_options, value="Debug")
+options_submenu.add_radiobutton(label='Progress Bars', variable=shell_options, value="Default")
+options_submenu.add_radiobutton(label='CMD Shell (Debug)', variable=shell_options, value="Debug")
 options_menu.add_separator()
 
 def set_ffmpeg_path():
     global ffmpeg
     path = filedialog.askopenfilename(title='Select Location to "ffmpeg.exe"', initialdir='/',
-                                      filetypes=[('ffmpeg', 'ffmpeg.exe')])
+                                      filetypes=[('ffmpeg', 'ffmpeg.exe')], parent=main)
     if not path:  # Closes program if 'Cancel' is selected when defining the path with message
-        messagebox.askokcancel(title='Error', message='Program cannot fully function without ffmpeg!')
-        root.destroy()
+        if pathlib.Path(ffmpeg.replace('"', '')).exists():
+            pass
+        else:
+            messagebox.showerror(parent=main, title='Error', message='Program cannot function without ffmpeg!')
+            main.destroy()
     if path:  # If 'Okay' is selected program will write path to ffmpeg to config.ini
         ffmpeg = '"' + str(pathlib.Path(path)) + '"'
         config.set('ffmpeg_path', 'path', ffmpeg)
@@ -118,11 +120,14 @@ options_menu.add_command(label='Set path to FFMPEG', command=set_ffmpeg_path)
 
 def set_youtubedl_path():
     global youtube_dl_cli
-    path = filedialog.askopenfilename(parent=root, title='Select Location to "youtube-dl.exe"', initialdir='/',
+    path = filedialog.askopenfilename(parent=main, title='Select Location to "youtube-dl.exe"', initialdir='/',
                                       filetypes=[('youtube-dl', 'youtube-dl.exe')])
     if not path:  # Closes program if 'Cancel' is selected when defining the path with message
-        messagebox.askyesno(parent=root, title='Error', message='Program cannot function without youtube-dl!')
-        root.destroy()
+        if pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
+            pass
+        else:
+            messagebox.showerror(parent=main, title='Error', message='Program cannot function without youtube-dl!')
+            main.destroy()
     if path:  # If 'Okay' is selected program will write path to youtube-dl to config.ini
         youtube_dl_cli = '"' + str(pathlib.Path(path)) + '"'
         config.set('youtubedl_path', 'path', youtube_dl_cli)
@@ -133,9 +138,10 @@ options_menu.add_command(label='Set path to youtube-dl', command=set_youtubedl_p
 options_menu.add_separator()
 
 def reset_config():
-    msg = messagebox.askyesno(title='Warning', message='Are you sure you want to reset the config.ini file settings?')
+    msg = messagebox.askyesno(title='Warning',
+                              message='Are you sure you want to reset the config.ini file settings?')
     if msg == False:
-       pass
+        pass
     if msg == True:
         try:
             config.set('ffmpeg_path', 'path', '')
@@ -145,7 +151,7 @@ def reset_config():
             messagebox.showinfo(title='Prompt', message='Please restart the program')
         except:
             pass
-        root.destroy()
+        main.destroy()
 
 options_menu.add_command(label='Reset Configuration File', command=reset_config)
 
@@ -159,7 +165,8 @@ def show_formats():
     global download_link, stream_window
     try:
         command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
-        run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW, universal_newlines=True,
+        run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW,
+                               universal_newlines=True,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
         try:
             stream_window.destroy()
@@ -190,8 +197,8 @@ help_menu.add_command(label="About", command=openaboutwindow)
 # --------------------------------------------------------------------------------------------- Menu Items and Sub-Bars
 
 # Link Frame ----------------------------------------------------------------------------------------------------------
-link_frame = LabelFrame(root, text=' Paste Link ')
-link_frame.grid(row=0, columnspan=4, sticky=E + W, padx=20, pady=(10,10))
+link_frame = LabelFrame(main, text=' Paste Link ')
+link_frame.grid(row=0, columnspan=4, sticky=E + W, padx=20, pady=(10, 10))
 link_frame.configure(fg="white", bg="#434547", bd=3)
 
 link_frame.rowconfigure(1, weight=1)
@@ -201,7 +208,7 @@ link_frame.columnconfigure(1, weight=1)
 # ---------------------------------------------------------------------------------------------------------- Link Frame
 
 # Notebook Frame ------------------------------------------------------------------------------------------------------
-tabs = ttk.Notebook(root, height=200)
+tabs = ttk.Notebook(main, height=200)
 tabs.grid(row=1, column=0, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10, 0))
 general_frame = Frame(tabs, background="#434547")
 video_frame = Frame(tabs, background="#434547")
@@ -215,14 +222,14 @@ tabs.add(audio_frame, text='  Audio Settings  ')
 # Add Link to variable ------------------------------------------------------------------------------------------------
 def apply_link():
     global download_link
-    link_entry.config(state=NORMAL)     #
-    link_entry.delete(0, END)           # This function clears entry box in order to add new link to entry box
-    link_entry.config(state=DISABLED)   #
+    link_entry.config(state=NORMAL)  #
+    link_entry.delete(0, END)  # This function clears entry box in order to add new link to entry box
+    link_entry.config(state=DISABLED)  #
     download_link = text_area.get(1.0, END)  # Pasted download link
-    text_area.delete(1.0, END)               # Deletes entry box where you pasted your link as it stores it into var
-    link_entry.config(state=NORMAL)      #
+    text_area.delete(1.0, END)  # Deletes entry box where you pasted your link as it stores it into var
+    link_entry.config(state=NORMAL)  #
     link_entry.insert(0, download_link)  # Adds download_link to entry box
-    link_entry.config(state=DISABLED)    #
+    link_entry.config(state=DISABLED)  #
     save_btn.config(state=NORMAL)
     list_all_formats.config(state=NORMAL)
 
@@ -231,17 +238,17 @@ def apply_link():
 # File Output ---------------------------------------------------------------------------------------------------------
 def file_save():
     global VideoOutput
-    save_entry.config(state=NORMAL)       #
-    save_entry.delete(0, END)             # This function clears entry box in order to add new link to entry box
-    save_entry.config(state=DISABLED)     #
-    VideoOutput = filedialog.askdirectory()  # Pop up window to choose a save directory location
+    save_entry.config(state=NORMAL)  #
+    save_entry.delete(0, END)  # This function clears entry box in order to add new link to entry box
+    save_entry.config(state=DISABLED)  #
+    VideoOutput = filedialog.askdirectory(parent=main)  # Pop up window to choose a save directory location
     if VideoOutput:
         save_for_entry = '"' + VideoOutput + '/"'  # Completes save directory and adds quotes
-        save_entry.config(state=NORMAL)       #
+        save_entry.config(state=NORMAL)  #
         save_entry.insert(0, save_for_entry)  # Adds download_link to entry box
-        save_entry.config(state=DISABLED)     #
+        save_entry.config(state=DISABLED)  #
         command_line_btn.config(state=NORMAL)  # Enables Button
-        start_job_btn.config(state=NORMAL)     # Enalbes Button
+        start_job_btn.config(state=NORMAL)  # Enalbes Button
 
 # --------------------------------------------------------------------------------------------------------- File Output
 
@@ -292,7 +299,7 @@ video_only_checkbox = Checkbutton(video_frame, text='Best Video + Audio\nSingle 
                                   onvalue='on', offvalue='', command=set_video_only, takefocus=False)
 video_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=6, sticky=N + S + E + W)
 video_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
-                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+                              activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
 video_only.set('')
 
 # ---------------------------------------------------------------------------------------------- Video Only Checkbutton
@@ -305,19 +312,22 @@ highest_quality_audio_only_checkbox = Checkbutton(audio_frame, text='Extract Aud
 highest_quality_audio_only_checkbox.grid(row=0, column=0, columnspan=1, rowspan=1, padx=10, pady=3,
                                          sticky=N + S + E + W)
 highest_quality_audio_only_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
-                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+                                              activeforeground="white", selectcolor="#434547",
+                                              font=("Helvetica", 12))
 highest_quality_audio_only.set("on")
 
 # ------------------------------------------------------------------------------------------ Highest Quality Audio Only
 
 # Add Meta-Data From Title --------------------------------------------------------------------------------------------
 metadata_from_title = StringVar()
-metadata_from_title_checkbox = Checkbutton(audio_frame, text='Add Meta-Data\nFrom Title', variable=metadata_from_title,
-                                           onvalue='--add-metadata --metadata-from-title "%(artist)s" ', offvalue='',
+metadata_from_title_checkbox = Checkbutton(audio_frame, text='Add Meta-Data\nFrom Title',
+                                           variable=metadata_from_title,
+                                           onvalue='--add-metadata --metadata-from-title "%(artist)s" ',
+                                           offvalue='',
                                            takefocus=False)
 metadata_from_title_checkbox.grid(row=1, column=0, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 metadata_from_title_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
-                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+                                       activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
 metadata_from_title.set('')
 
 # -------------------------------------------------------------------------------------------- Add Meta-Data From Title
@@ -330,7 +340,7 @@ def audio_format_menu_hover(e):
 def audio_format_menu_hover_leave(e):
     audio_format_menu["bg"] = "#23272A"
 
-audio_format = StringVar(root)
+audio_format = StringVar(main)
 audio_format_choices = {'WAV': '--audio-format wav ',
                         'AAC': '--audio-format aac ',
                         'FLAC': '--audio-format flac ',
@@ -339,15 +349,16 @@ audio_format_choices = {'WAV': '--audio-format wav ',
                         'Opus': '--audio-format opus ',
                         'Vorbis': '--audio-format vorbis '}
 audio_format_menu_label = Label(audio_frame, text="Audio Format :", background="#434547",
-                                 foreground="white")
-audio_format_menu_label.grid(row=0, column=1, columnspan=2, padx=10, pady=(3,10), sticky=W + E)
+                                foreground="white")
+audio_format_menu_label.grid(row=0, column=1, columnspan=2, padx=10, pady=(3, 10), sticky=W + E)
 audio_format_menu = OptionMenu(audio_frame, audio_format, *audio_format_choices.keys())
 audio_format_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=19, state=DISABLED)
-audio_format_menu.grid(row=1, column=1, columnspan=2, padx=10, pady=(3,10))
+audio_format_menu.grid(row=1, column=1, columnspan=2, padx=10, pady=(3, 10))
 audio_format.set('WAV')
 audio_format_menu["menu"].configure(activebackground="dim grey")
 audio_format_menu.bind("<Enter>", audio_format_menu_hover)
 audio_format_menu.bind("<Leave>", audio_format_menu_hover_leave)
+
 # -------------------------------------------------------------------------------------------------------- Audio Format
 
 # Download Rate -------------------------------------------------------------------------------------------------------
@@ -358,7 +369,7 @@ def download_rate_menu_hover(e):
 def download_rate_menu_hover_leave(e):
     download_rate_menu["bg"] = "#23272A"
 
-download_rate = StringVar(root)
+download_rate = StringVar(main)
 download_rate_choices = {'Unlimited': '',
                          '10 - KiB      (Slowest)': '-r 10K ',
                          '50 - KiB': '-r 50K ',
@@ -376,10 +387,10 @@ download_rate_choices = {'Unlimited': '',
                          '1000 - MiB  (Fastest)': '-r 1000M '}
 download_rate_menu_label = Label(general_frame, text="Download Rate :", background="#434547",
                                  foreground="white")
-download_rate_menu_label.grid(row=0, column=0, columnspan=1, padx=10, pady=(3,10), sticky=W + E)
+download_rate_menu_label.grid(row=0, column=0, columnspan=1, padx=10, pady=(3, 10), sticky=W + E)
 download_rate_menu = OptionMenu(general_frame, download_rate, *download_rate_choices.keys())
 download_rate_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=19)
-download_rate_menu.grid(row=1, column=0, columnspan=1, padx=10, pady=(3,10))
+download_rate_menu.grid(row=1, column=0, columnspan=1, padx=10, pady=(3, 10))
 download_rate.set('Unlimited')
 download_rate_menu["menu"].configure(activebackground="dim grey")
 download_rate_menu.bind("<Enter>", download_rate_menu_hover)
@@ -400,10 +411,10 @@ no_continue.set('')
 # No Part Checkbutton -------------------------------------------------------------------------------------------------
 no_part = StringVar()
 no_part_checkbox = Checkbutton(general_frame, text="Don't Use\n.part Files", variable=no_part,
-                                   onvalue='--no-part ', offvalue='', takefocus=False)
+                               onvalue='--no-part ', offvalue='', takefocus=False)
 no_part_checkbox.grid(row=0, column=2, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 no_part_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
-                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+                           activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
 no_part.set('')
 
 # ------------------------------------------------------------------------------------------------------------- No Part
@@ -411,7 +422,7 @@ no_part.set('')
 # Youtube-Subtitle Checkbutton ----------------------------------------------------------------------------------------
 yt_subtitle = StringVar()
 yt_subtitle_checkbox = Checkbutton(general_frame, text="Auto Write Subs\n(Youtube Only / If Aval)",
-                                   variable=yt_subtitle, onvalue='--write-auto-sub ', offvalue='' ,takefocus=False)
+                                   variable=yt_subtitle, onvalue='--write-auto-sub ', offvalue='', takefocus=False)
 yt_subtitle_checkbox.grid(row=1, column=1, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 yt_subtitle_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
                                activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
@@ -434,11 +445,11 @@ dl_playlist.set('--yes-playlist')
 # Skip Unavaliable Checkbutton ----------------------------------------------------------------------------------------
 ignore_errors = StringVar()
 ignore_errors_checkbox = Checkbutton(general_frame, text="Skip Unavailable\nVideos",
-                                   variable=ignore_errors, onvalue='-i', offvalue='',
-                                   takefocus=False)
+                                     variable=ignore_errors, onvalue='-i', offvalue='',
+                                     takefocus=False)
 ignore_errors_checkbox.grid(row=2, column=2, columnspan=1, rowspan=1, padx=10, pady=3, sticky=N + S + E + W)
 ignore_errors_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
-                               activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+                                 activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
 ignore_errors.set('-i')
 
 # ---------------------------------------------------------------------------------------- Skip Unavaliable Checkbutton
@@ -451,7 +462,7 @@ def audio_quality_menu_hover(e):
 def audio_quality_menu_hover_leave(e):
     audio_quality_menu["bg"] = "#23272A"
 
-audio_quality = StringVar(root)
+audio_quality = StringVar(main)
 audio_quality_choices = {'0 - Best': '--audio-quality 0 -x ',
                          '1': '--audio-quality 1 -x ',
                          '2': '--audio-quality 2 -x ',
@@ -462,15 +473,17 @@ audio_quality_choices = {'0 - Best': '--audio-quality 0 -x ',
                          '7': '--audio-quality 7 -x ',
                          '8': '--audio-quality 8 -x ',
                          '9 - Worse': '--audio-quality 9 -x '}
-audio_quality_menu_label = Label(audio_frame, text="Audio Quality (VBR) :", background="#434547", foreground="white")
-audio_quality_menu_label.grid(row=0, column=3, columnspan=2, padx=10, pady=(3,10), sticky=W + E)
+audio_quality_menu_label = Label(audio_frame, text="Audio Quality (VBR) :", background="#434547",
+                                 foreground="white")
+audio_quality_menu_label.grid(row=0, column=3, columnspan=2, padx=10, pady=(3, 10), sticky=W + E)
 audio_quality_menu = OptionMenu(audio_frame, audio_quality, *audio_quality_choices.keys())
 audio_quality_menu.config(background="#23272A", foreground="white", highlightthickness=1, width=19, state=DISABLED)
-audio_quality_menu.grid(row=1, column=3, columnspan=2, padx=10, pady=(3,10))
+audio_quality_menu.grid(row=1, column=3, columnspan=2, padx=10, pady=(3, 10))
 audio_quality.set('5 - Default')
 audio_quality_menu["menu"].configure(activebackground="dim grey")
 audio_quality_menu.bind("<Enter>", audio_quality_menu_hover)
 audio_quality_menu.bind("<Leave>", audio_quality_menu_hover_leave)
+
 # ------------------------------------------------------------------------------------------------------- Audio Quality
 
 # Views Command -------------------------------------------------------------------------------------------------------
@@ -530,10 +543,10 @@ def start_job():
             thread = threading.Thread(target=close_encode)
             thread.start()
 
-        window = Toplevel(root)
+        window = Toplevel(main)
         window.title(download_link)
         window.configure(background="#434547")
-        encode_label = Label(window, text= '- ' * 22 + 'Progress ' + '- ' * 22,
+        encode_label = Label(window, text='- ' * 22 + 'Progress ' + '- ' * 22,
                              font=("Times New Roman", 14), background='#434547', foreground="white")
         encode_label.grid(column=0, columnspan=2, row=0)
         window.grid_columnconfigure(0, weight=1)
@@ -590,11 +603,12 @@ def start_job():
                         total_file_progress = (', '.join(modify_line).replace(',', '').replace('video', 'file'))
                         progress_label = Label(window, text=total_file_progress, font=("Times New Roman", 14),
                                                background='#434547', foreground="white")
-                        progress_label.grid(row=3, column=0, pady=(0,20))
+                        progress_label.grid(row=3, column=0, pady=(0, 20))
                         file_progress = line.split()[3]
                         file_progress_total = line.split()[5]
-                        mini_progressbar = ttk.Progressbar(window, orient=HORIZONTAL, length=300, mode='determinate')
-                        mini_progressbar.grid(row=3, column=1, pady=(0, 10), padx=(0,15))
+                        mini_progressbar = ttk.Progressbar(window, orient=HORIZONTAL, length=300,
+                                                           mode='determinate')
+                        mini_progressbar.grid(row=3, column=1, pady=(0, 10), padx=(0, 15))
                         percent = '{:.1%}'.format(int(file_progress) / int(file_progress_total)).split('.', 1)[0]
                         mini_progressbar['value'] = int(percent)
             except:
@@ -613,7 +627,7 @@ def start_job():
 text_area = scrolledtext.ScrolledText(link_frame, wrap=WORD, width=69, height=1, font=("Times New Roman", 14),
                                       foreground="grey")
 text_area.insert(END, "Right Click or 'Ctrl + V'")
-text_area.grid(row=0, column=0, columnspan=3, pady=(1,5), padx=10, sticky=W + E)
+text_area.grid(row=0, column=0, columnspan=3, pady=(1, 5), padx=10, sticky=W + E)
 
 # -------------------------------------------------------------------------- Right click menu to paste in text_area box
 def paste_clipboard():  # Allows user to paste what ever is in their clipboard with right click and paste
@@ -625,13 +639,15 @@ def remove_text(e):  # Deletes current text in text box upon 'Left Clicking'
     text_area.config(foreground="black")
     text_area.delete(1.0, END)
 
-m = Menu(root, tearoff = 0) # Pop up menu for 'Paste'
-m.add_command(label = "Paste", command=paste_clipboard)
+m = Menu(main, tearoff=0)  # Pop up menu for 'Paste'
+m.add_command(label="Paste", command=paste_clipboard)
+
 def do_popup(event):
     try:
-        m.tk_popup(event.x_root, event.y_root)
+        m.tk_popup(event.x_main, event.y_main)
     finally:
         m.grab_release()
+
 text_area.bind("<Button-3>", do_popup)  # Uses right click to make a function
 text_area.bind("<Button-1>", remove_text)  # Uses left click to make a function
 # Right click menu to paste in text_area box --------------------------------------------------------------------------
@@ -645,7 +661,8 @@ def apply_btn_hover(e):
 def apply_btn_hover_leave(e):
     apply_btn["bg"] = "#8b0000"
 
-apply_btn = Button(link_frame, text="Add Link", command=apply_link, foreground="white", background="#8b0000", width=30)
+apply_btn = Button(link_frame, text="Add Link", command=apply_link, foreground="white", background="#8b0000",
+                   width=30)
 apply_btn.grid(row=1, column=0, columnspan=1, padx=10, pady=5, sticky=W)
 apply_btn.bind("<Enter>", apply_btn_hover)
 apply_btn.bind("<Leave>", apply_btn_hover_leave)
@@ -656,13 +673,13 @@ def save_btn_hover(e):
 def save_btn_hover_leave(e):
     save_btn["bg"] = "#8b0000"
 
-save_btn = Button(root, text="Save Directory", command=file_save, foreground="white", background="#8b0000",
+save_btn = Button(main, text="Save Directory", command=file_save, foreground="white", background="#8b0000",
                   state=DISABLED)
-save_btn.grid(row=4, column=0, columnspan=1, padx=10, pady=(15,0), sticky=W + E)
+save_btn.grid(row=4, column=0, columnspan=1, padx=10, pady=(15, 0), sticky=W + E)
 save_btn.bind("<Enter>", save_btn_hover)
 save_btn.bind("<Leave>", save_btn_hover_leave)
 
-save_entry = Entry(root, borderwidth=4, background="#CACACA", state=DISABLED)
+save_entry = Entry(main, borderwidth=4, background="#CACACA", state=DISABLED)
 save_entry.grid(row=4, column=1, columnspan=3, padx=10, pady=(15, 0), sticky=W + E)
 
 def start_job_btn_hover(e):
@@ -676,9 +693,9 @@ def normal_job_start():  # Sets the custom_job variable and starts the job proce
     custom_job = 'Off'
     threading.Thread(target=start_job).start()
 
-start_job_btn = Button(root, text="Start Job", command=normal_job_start,
+start_job_btn = Button(main, text="Start Job", command=normal_job_start,
                        foreground="white", background="#8b0000", state=DISABLED)
-start_job_btn.grid(row=5, column=3, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
+start_job_btn.grid(row=5, column=3, columnspan=1, padx=10, pady=(15, 15), sticky=N + S + W + E)
 start_job_btn.bind("<Enter>", start_job_btn_hover)
 start_job_btn.bind("<Leave>", start_job_btn_hover_leave)
 
@@ -688,9 +705,9 @@ def command_line_btn_hover(e):
 def command_line_btn_hover_leave(e):
     command_line_btn["bg"] = "#8b0000"
 
-command_line_btn = Button(root, text="View Command", command=view_command, foreground="white", background="#8b0000",
+command_line_btn = Button(main, text="View Command", command=view_command, foreground="white", background="#8b0000",
                           state=DISABLED)
-command_line_btn.grid(row=5, column=0, columnspan=1, padx=10, pady=(15,15), sticky=N + S + W + E)
+command_line_btn.grid(row=5, column=0, columnspan=1, padx=10, pady=(15, 15), sticky=N + S + W + E)
 command_line_btn.bind("<Enter>", command_line_btn_hover)
 command_line_btn.bind("<Leave>", command_line_btn_hover_leave)
 
@@ -705,7 +722,8 @@ def custom_format():
     global download_link, stream_window, audio_spinbox_var, video_spinbox_var
     try:
         command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
-        run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW, universal_newlines=True,
+        run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW,
+                               universal_newlines=True,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
         try:
             stream_window.destroy()
@@ -726,9 +744,9 @@ def custom_format():
         a_label.grid(column=2, row=2, columnspan=1)
         video_spinbox_var = StringVar()
         video_spinbox = Spinbox(stream_window, from_=0, to=1000, increment=1.0, justify=CENTER,
-                                             wrap=True, textvariable=video_spinbox_var)
+                                wrap=True, textvariable=video_spinbox_var)
         video_spinbox.configure(background="#23272A", foreground="white", highlightthickness=1,
-                                             buttonbackground="#8b0000", width=15, readonlybackground="#23272A")
+                                buttonbackground="#8b0000", width=15, readonlybackground="#23272A")
         video_spinbox.grid(row=3, column=1, columnspan=2, padx=10, pady=3)
         audio_spinbox_var = StringVar()
         audio_spinbox = Spinbox(stream_window, from_=0, to=1000, increment=1.0, justify=CENTER,
@@ -768,9 +786,10 @@ def custom_format():
 
 # -------------------------------------------------------------------------------------------------------- Show Formats
 
-list_all_formats = Button(root, text="Custom Download", command=lambda: threading.Thread(target=custom_format).start(),
+list_all_formats = Button(main, text="Custom Download",
+                          command=lambda: threading.Thread(target=custom_format).start(),
                           foreground="white", background="#8b0000", state=DISABLED)
-list_all_formats.grid(row=5, column=1, columnspan=2, padx=10, pady=(15,15), sticky=N + S + W + E)
+list_all_formats.grid(row=5, column=1, columnspan=2, padx=10, pady=(15, 15), sticky=N + S + W + E)
 list_all_formats.bind("<Enter>", list_all_formats_hover)
 list_all_formats.bind("<Leave>", list_all_formats_hover_leave)
 
@@ -831,18 +850,20 @@ if config['youtubedl_path']['path'] == '' or not pathlib.Path(youtube_dl_cli.rep
 def downloadfiles():
     def open_window():
         global window_message
+
         def dw_exit_function():
-            confirm_exit = messagebox.askyesno(title='Prompt', message="Are you sure you want to exit the program?\n"
-                                                                       "\nYou could potentially corrupt some required"
-                                                                       " applications\n\nIf this happens delete the "
-                                                                       "'Apps' folder and restart the program",
-                                               parent=root)
+            confirm_exit = messagebox.askyesno(title='Prompt',
+                                               message="Are you sure you want to exit the program?\n"
+                                                       "\nYou could potentially corrupt some required"
+                                                       " applications\n\nIf this happens delete the "
+                                                       "'Apps' folder and restart the program",
+                                               parent=main)
             if confirm_exit == False:
                 pass
             elif confirm_exit == True:
-                root.destroy()
+                main.destroy()
 
-        window_message = Toplevel(master=root)
+        window_message = Toplevel(master=main)
         window_message.title('Download')
         window_message.configure(background="#434547")
         window_height = 80
@@ -851,37 +872,43 @@ def downloadfiles():
         screen_height = window_message.winfo_screenheight()
         x_coordinate = int((screen_width / 2) - (window_width / 2))
         y_coordinate = int((screen_height / 2) - (window_height / 2))
-        window_message.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
+        window_message.geometry(
+            f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")  # Window for download
         window_message.protocol('WM_DELETE_WINDOW', dw_exit_function)
-        window_message.transient(root)
+        window_message.transient(main)
         window_message.grab_set()
 
     # FFMPEG check -------------------------------------------------------------------
     if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
-        ffmpeg_error = messagebox.askyesnocancel(parent=root, title='FFMPEG Not Found',
-                                              message="            Navigate to 'ffmpeg.exe'\n\n"
-                                                      "If you do not have it select 'No' to download")
+        ffmpeg_error = messagebox.askyesnocancel(parent=main, title='FFMPEG Not Found',
+                                                 message="            Navigate to 'ffmpeg.exe'\n\n"
+                                                         "If you do not have it select 'No' to download")
         if ffmpeg_error == False:  # If ffmpeg_error msgbox 'No' is selected
             open_window()
             lbl = Label(window_message, text='Downloading ffmpeg.7z', bg='#434547', fg='white', font=(None, 18))
             lbl.pack(expand=True, fill='x', padx=10)  # Download window label
             app_progress_bar = ttk.Progressbar(window_message, orient=HORIZONTAL, mode='determinate', )
             app_progress_bar.pack(fill='x', expand=True, padx=10)  # spawns progress bar
+
             def Download_Progress(block_num, block_size, total_size):
                 progress = int((block_num * block_size / total_size) * 100)
-                app_progress_bar['value'] = int(progress)  # get download progress and convert it into the visual bar
+                app_progress_bar['value'] = int(
+                    progress)  # get download progress and convert it into the visual bar
+
             pathlib.Path('Apps/temp').mkdir(parents=True, exist_ok=True)  # Makes directory 'temp'
             urllib.request.urlretrieve('https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z',
-                                       'Apps/temp/ffmpeg-git-full.7z', reporthook=Download_Progress)  # Downloads .7z
+                                       'Apps/temp/ffmpeg-git-full.7z',
+                                       reporthook=Download_Progress)  # Downloads .7z
             sleep(2)  # Halts the program for 2 seconds
             lbl.configure(text='Extracting ffmpeg.exe')  # Update label
             app_progress_bar['value'] = int(0)  # Sets progress bar back to 0%
             sleep(2)  # Halts the program for 2 seconds
             command = '"' + '"Apps/7z/7za.exe" e ' \
                       + '"Apps/temp/ffmpeg-git-full.7z" "-oApps/ffmpeg" ffmpeg.exe -r' + '"'
-            subprocess.Popen('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW)  # Command to extract .7z
-            app_progress_bar['value'] = int(50) # Pushes generic percentage to the progressbar
-            sleep(1) # Halts the program for 1 second
+            subprocess.Popen('cmd /c' + command,
+                             creationflags=subprocess.CREATE_NO_WINDOW)  # Command to extract .7z
+            app_progress_bar['value'] = int(50)  # Pushes generic percentage to the progressbar
+            sleep(1)  # Halts the program for 1 second
             app_progress_bar['value'] = int(100)  # Pushes generic percentage to the progressbar
             lbl.configure(text='Extraction Complete!')  # Updates label
             sleep(1)  # Halts the program for 1 second
@@ -891,35 +918,38 @@ def downloadfiles():
                 sleep(2)  # Halts the program for 2 seconds
                 window_message.destroy()  # Closes the download window
             if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
-                messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
+                messagebox.showinfo(parent=main, title='Info', message='Could not download file')  # Error
             shutil.rmtree('Apps/temp', ignore_errors=True)
         elif ffmpeg_error == True:  # If user selects 'Yes,' this runs the function to define the path
             set_ffmpeg_path()
         elif ffmpeg_error == None:
-            root.destroy()  # If user selects 'Cancel,' the main program closes
+            main.destroy()  # If user selects 'Cancel,' the main program closes
 
     # -------------------------------------------------------------------- FFMPEG check
 
     # youtube-dl check ---------------------------------------------------------------------
     if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
-        youtubedl_error = messagebox.askyesnocancel(parent=root, title='youtube-dl Not Found',
-                                              message="                   Navigate to 'youtube-dl.exe'\n\n"
-                                                      "If you do not have it select 'No' to download automatically")
+        youtubedl_error = messagebox.askyesnocancel(parent=main, title='youtube-dl Not Found',
+                                                    message="                   Navigate to 'youtube-dl.exe'\n\n"
+                                                            "If you do not have it select 'No' to download automatically")
         if youtubedl_error == False:  # If user selects 'No' on messagebox prompt
             open_window()
             lbl = Label(window_message, text='Downloading youtube-dl', bg='#434547', fg='white', font=(None, 18))
             lbl.pack(expand=True, fill='x', padx=10)  # Download window label
             app_progress_bar = ttk.Progressbar(window_message, orient=HORIZONTAL, mode='determinate', )
             app_progress_bar.pack(fill='x', expand=True, padx=10)  # spawns progress bar
+
             def Download_Progress(block_num, block_size, total_size):
                 progress = int((block_num * block_size / total_size) * 100)
-                app_progress_bar['value'] = int(progress)  # get download progress and convert it into the visual bar
+                app_progress_bar['value'] = int(
+                    progress)  # get download progress and convert it into the visual bar
+
             try:
                 urllib.request.urlretrieve('https://youtube-dl.org/downloads/latest/youtube-dl.exe',
-                                       'Apps/youtube-dl/youtube-dl.exe', reporthook=Download_Progress)
+                                           'Apps/youtube-dl/youtube-dl.exe', reporthook=Download_Progress)
             except urllib.error.HTTPError:
-                messagebox.showinfo(parent=root, title='Info', message='Could Not Download youtube-dl.exe!!')
-                root.destroy()  # Tries to download latest youtube-dl from main website
+                messagebox.showinfo(parent=main, title='Info', message='Could Not Download youtube-dl.exe!!')
+                main.destroy()  # Tries to download latest youtube-dl from main website
 
             check_youtubedl()  # Runs the function to write youtube-dl to path if needed again after download
             if pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
@@ -927,25 +957,23 @@ def downloadfiles():
                 sleep(2)
                 window_message.destroy()
             if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
-                messagebox.showinfo(parent=root, title='Info', message='Could not download file')  # Error
+                messagebox.showinfo(parent=main, title='Info', message='Could not download file')  # Error
 
         elif youtubedl_error == True:
             set_youtubedl_path()  # If user selects 'Yes,' this runs the function to define the path
         elif youtubedl_error == None:
-            root.destroy()  # If user selects 'Cancel,' the main program closes
+            main.destroy()  # If user selects 'Cancel,' the main program closes
 
-    root.wm_attributes('-alpha', 1.0)  # Remove transparency at the end of download jobs
-
+    main.wm_attributes('-alpha', 1.0)  # Remove transparency at the end of download jobs
 
 if pathlib.Path(ffmpeg.replace('"', '')).exists() and pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
     pass
 else:
-    root.wm_attributes('-alpha',0.5)  # Makes root transparent during download jobs
+    main.wm_attributes('-alpha', 0.5)  # Makes main transparent during download jobs
     threading.Thread(target=downloadfiles, daemon=True).start()
 # ----------------------------------------------------------------------------- youtube-dl check
 # Checks if needed executables are found by the program -----------------------------------------
 
-
 # End Loop ------------------------------------------------------------------------------------------------------------
-root.mainloop()
+main.mainloop()
 # ------------------------------------------------------------------------------------------------------------ End Loop
