@@ -2,10 +2,13 @@
 from tkinter import (filedialog, StringVar, Tk, Menu, E, W, N, S, LabelFrame, PhotoImage, NORMAL, END,
                      DISABLED, Checkbutton, Label, ttk, scrolledtext, messagebox, OptionMenu, Toplevel, Text, SUNKEN,
                      HORIZONTAL, WORD, Entry, Button, Frame, Spinbox, CENTER)
-import subprocess, pyperclip, shutil, pathlib, threading, urllib.request
+import subprocess, pyperclip, shutil, pathlib, threading, urllib.request, ssl
 from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
 from time import sleep
+# This creates an ini file for the autodownloader
+from Packages.downloadlinks import download_link_script
+download_link_script()
 # -------------------------------------------------------------------- Imports
 
 # Main Gui & Windows ---------------------------------------------------------------------------------------
@@ -24,7 +27,7 @@ def main_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 main = Tk()
-main.title("Youtube-DL-Gui v1.35.3")
+main.title("Youtube-DL-Gui v1.35.7")
 main.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 main.configure(background="#434547")
 window_height = 500
@@ -54,13 +57,17 @@ if not config.has_section('youtubedl_path'):
     config.add_section('youtubedl_path')
 if not config.has_option('youtubedl_path', 'path'):
     config.set('youtubedl_path', 'path', '')
+if not config.has_section('debug_option'):
+    config.add_section('debug_option')
+if not config.has_option('debug_option', 'option'):
+    config.set('debug_option', 'option', '')
 try:
     with open(config_file, 'w') as configfile:
         config.write(configfile)
 except:
     messagebox.showinfo(parent=main, title='Error', message='Could Not Write to config.ini file\nDelete and Try Again')
 
-pathlib.Path('Apps/youtube-dl').mkdir(parents=True, exist_ok=True)  # Make directory if needed
+pathlib.Path('Apps/yt-dlp').mkdir(parents=True, exist_ok=True)  # Make directory if needed
 pathlib.Path('Apps/ffmpeg').mkdir(parents=True, exist_ok=True)  # Make directory if needed
 
 ffmpeg = config['ffmpeg_path']['path']
@@ -95,9 +102,23 @@ my_menu_bar.add_cascade(label='Options', menu=options_menu)
 options_submenu = Menu(main, tearoff=0, activebackground='dim grey')
 options_menu.add_cascade(label='Shell Options', menu=options_submenu)
 shell_options = StringVar()
-shell_options.set('Default')
-options_submenu.add_radiobutton(label='Progress Bars', variable=shell_options, value="Default")
-options_submenu.add_radiobutton(label='CMD Shell (Debug)', variable=shell_options, value="Debug")
+shell_options.set(config['debug_option']['option'])
+if shell_options.get() == '':
+    shell_options.set('Default')
+elif shell_options.get() != '':
+    shell_options.set(config['debug_option']['option'])
+def update_shell_option():
+    try:
+        config.set('debug_option', 'option', shell_options.get())
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+    except:
+        pass
+update_shell_option()
+options_submenu.add_radiobutton(label='Progress Bars', variable=shell_options,
+                                value="Default", command=update_shell_option)
+options_submenu.add_radiobutton(label='CMD Shell (Debug)', variable=shell_options,
+                                value="Debug", command=update_shell_option)
 options_menu.add_separator()
 
 def set_ffmpeg_path():
@@ -108,25 +129,25 @@ def set_ffmpeg_path():
         if pathlib.Path(ffmpeg.replace('"', '')).exists():
             pass
         else:
-            messagebox.showerror(parent=main, title='Error', message='Program cannot function without ffmpeg!')
-            main.destroy()
+            messagebox.showerror(parent=main, title='Error', message='Program cannot '
+                                                                     'post process without "ffmpeg.exe"')
     if path:  # If 'Okay' is selected program will write path to ffmpeg to config.ini
         ffmpeg = '"' + str(pathlib.Path(path)) + '"'
         config.set('ffmpeg_path', 'path', ffmpeg)
         with open(config_file, 'w') as configfile:
             config.write(configfile)
 
-options_menu.add_command(label='Set path to FFMPEG', command=set_ffmpeg_path)
+options_menu.add_command(label='Set path to ffmpeg', command=set_ffmpeg_path)
 
 def set_youtubedl_path():
     global youtube_dl_cli
-    path = filedialog.askopenfilename(parent=main, title='Select Location to "youtube-dl.exe"', initialdir='/',
-                                      filetypes=[('youtube-dl', 'youtube-dl.exe')])
+    path = filedialog.askopenfilename(parent=main, title='Select Location to "yt-dlp.exe"', initialdir='/',
+                                      filetypes=[('yt-dlp', 'yt-dlp.exe')])
     if not path:  # Closes program if 'Cancel' is selected when defining the path with message
         if pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
             pass
         else:
-            messagebox.showerror(parent=main, title='Error', message='Program cannot function without youtube-dl!')
+            messagebox.showerror(parent=main, title='Error', message='Program cannot function without yt-dlp!')
             main.destroy()
     if path:  # If 'Okay' is selected program will write path to youtube-dl to config.ini
         youtube_dl_cli = '"' + str(pathlib.Path(path)) + '"'
@@ -134,12 +155,11 @@ def set_youtubedl_path():
         with open(config_file, 'w') as configfile:
             config.write(configfile)
 
-options_menu.add_command(label='Set path to youtube-dl', command=set_youtubedl_path)
+options_menu.add_command(label='Set path to yt-dlp', command=set_youtubedl_path)
 options_menu.add_separator()
 
 def reset_config():
-    msg = messagebox.askyesno(title='Warning',
-                              message='Are you sure you want to reset the config.ini file settings?')
+    msg = messagebox.askyesno(title='Warning', message='Are you sure you want to reset the config.ini file settings?')
     if msg == False:
         pass
     if msg == True:
@@ -157,7 +177,7 @@ options_menu.add_command(label='Reset Configuration File', command=reset_config)
 
 tools_submenu = Menu(my_menu_bar, tearoff=0, activebackground='dim grey')
 my_menu_bar.add_cascade(label='Tools', menu=tools_submenu)
-tools_submenu.add_command(label="Check for Youtube-DL CLI updates", command=check_for_update)
+tools_submenu.add_command(label="Check for yt-dlp for updates", command=check_for_update)
 tools_submenu.add_separator()
 
 # Function and GUI button to 'Show All Formats' -----------------------------------------------------------------------
@@ -644,7 +664,7 @@ m.add_command(label="Paste", command=paste_clipboard)
 
 def do_popup(event):
     try:
-        m.tk_popup(event.x_main, event.y_main)
+        m.tk_popup(event.x_root, event.y_root)
     finally:
         m.grab_release()
 
@@ -832,7 +852,7 @@ def check_youtubedl():
     global youtube_dl_cli
     # youtubeDL cli -------------------------------------------------------------
     if youtube_dl_cli == '' or not pathlib.Path(youtube_dl_cli.replace('"', '')).exists():
-        youtube_dl_cli = '"' + str(pathlib.Path('Apps/youtube-dl/youtube-dl.exe')) + '"'
+        youtube_dl_cli = '"' + str(pathlib.Path('Apps/yt-dlp/yt-dlp.exe')) + '"'
         try:
             config.set('youtubedl_path', 'path', youtube_dl_cli)
             with open(config_file, 'w') as configfile:
@@ -878,6 +898,10 @@ def downloadfiles():
         window_message.transient(main)
         window_message.grab_set()
 
+    download_links_config = 'Runtime/downloadlinks.ini'  # Creates (if doesn't exist) and defines location of config.ini
+    dl_link_parser = ConfigParser()
+    dl_link_parser.read(download_links_config)
+
     # FFMPEG check -------------------------------------------------------------------
     if not pathlib.Path(config['ffmpeg_path']['path'].replace('"', '')).is_file():
         ffmpeg_error = messagebox.askyesnocancel(parent=main, title='FFMPEG Not Found',
@@ -892,12 +916,11 @@ def downloadfiles():
 
             def Download_Progress(block_num, block_size, total_size):
                 progress = int((block_num * block_size / total_size) * 100)
-                app_progress_bar['value'] = int(
-                    progress)  # get download progress and convert it into the visual bar
+                app_progress_bar['value'] = int(progress)  # get download progress and convert it into the visual bar
 
             pathlib.Path('Apps/temp').mkdir(parents=True, exist_ok=True)  # Makes directory 'temp'
-            urllib.request.urlretrieve('https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z',
-                                       'Apps/temp/ffmpeg-git-full.7z',
+            ssl._create_default_https_context = ssl._create_unverified_context
+            urllib.request.urlretrieve(dl_link_parser['ffmpeg_link']['link'], 'Apps/temp/ffmpeg-git-full.7z',
                                        reporthook=Download_Progress)  # Downloads .7z
             sleep(2)  # Halts the program for 2 seconds
             lbl.configure(text='Extracting ffmpeg.exe')  # Update label
@@ -923,15 +946,17 @@ def downloadfiles():
         elif ffmpeg_error == True:  # If user selects 'Yes,' this runs the function to define the path
             set_ffmpeg_path()
         elif ffmpeg_error == None:
-            main.destroy()  # If user selects 'Cancel,' the main program closes
+            messagebox.showerror(title='Error!', message='Program cannot post process without "ffmpeg.exe"')
+            #main.destroy()  # If user selects 'Cancel,' the main program closes
 
     # -------------------------------------------------------------------- FFMPEG check
 
     # youtube-dl check ---------------------------------------------------------------------
     if not pathlib.Path(config['youtubedl_path']['path'].replace('"', '')).is_file():
-        youtubedl_error = messagebox.askyesnocancel(parent=main, title='youtube-dl Not Found',
-                                                    message="                   Navigate to 'youtube-dl.exe'\n\n"
-                                                            "If you do not have it select 'No' to download automatically")
+        youtubedl_error = messagebox.askyesnocancel(parent=main, title='yt-dlp Not Found',
+                                                    message="                   Navigate to 'yt-dlp.exe'\n\n"
+                                                            "If you do not have it select 'No' "
+                                                            "to download automatically")
         if youtubedl_error == False:  # If user selects 'No' on messagebox prompt
             open_window()
             lbl = Label(window_message, text='Downloading youtube-dl', bg='#434547', fg='white', font=(None, 18))
@@ -941,12 +966,10 @@ def downloadfiles():
 
             def Download_Progress(block_num, block_size, total_size):
                 progress = int((block_num * block_size / total_size) * 100)
-                app_progress_bar['value'] = int(
-                    progress)  # get download progress and convert it into the visual bar
-
+                app_progress_bar['value'] = int(progress)  # get download progress and convert it into the visual bar
             try:
-                urllib.request.urlretrieve('https://youtube-dl.org/downloads/latest/youtube-dl.exe',
-                                           'Apps/youtube-dl/youtube-dl.exe', reporthook=Download_Progress)
+                urllib.request.urlretrieve(dl_link_parser['youtubedl_link']['link'], 'Apps/yt-dlp/yt-dlp.exe',
+                                           reporthook=Download_Progress)
             except urllib.error.HTTPError:
                 messagebox.showinfo(parent=main, title='Info', message='Could Not Download youtube-dl.exe!!')
                 main.destroy()  # Tries to download latest youtube-dl from main website
@@ -962,6 +985,7 @@ def downloadfiles():
         elif youtubedl_error == True:
             set_youtubedl_path()  # If user selects 'Yes,' this runs the function to define the path
         elif youtubedl_error == None:
+            messagebox.showerror(title='Error!', message='Program cannot download without "yt-dlp.exe"')
             main.destroy()  # If user selects 'Cancel,' the main program closes
 
     main.wm_attributes('-alpha', 1.0)  # Remove transparency at the end of download jobs
