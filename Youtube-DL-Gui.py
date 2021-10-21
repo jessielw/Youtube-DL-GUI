@@ -27,10 +27,10 @@ def main_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 main = Tk()
-main.title("Youtube-DL-Gui v1.35.7")
+main.title("Youtube-DL-Gui v1.35.8")
 main.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 main.configure(background="#434547")
-window_height = 500
+window_height = 580
 window_width = 720
 screen_width = main.winfo_screenwidth()
 screen_height = main.winfo_screenheight()
@@ -218,18 +218,30 @@ help_menu.add_command(label="About", command=openaboutwindow)
 
 # Link Frame ----------------------------------------------------------------------------------------------------------
 link_frame = LabelFrame(main, text=' Paste Link ')
-link_frame.grid(row=0, columnspan=4, sticky=E + W, padx=20, pady=(10, 10))
+link_frame.grid(row=0, columnspan=4, sticky=E + W, padx=20, pady=(10, 4))
 link_frame.configure(fg="white", bg="#434547", bd=3)
-
 link_frame.rowconfigure(1, weight=1)
 link_frame.columnconfigure(0, weight=1)
 link_frame.columnconfigure(1, weight=1)
 
 # ---------------------------------------------------------------------------------------------------------- Link Frame
 
+# Input Frame ----------------------------------------------------------------------------------------------------------
+input_frame = LabelFrame(main, text=' Input ')
+input_frame.grid(row=1, columnspan=4, sticky=E + W, padx=20, pady=(4, 10))
+input_frame.configure(fg="white", bg="#434547", bd=3)
+input_frame.rowconfigure(1, weight=1)
+input_frame.columnconfigure(0, weight=1)
+input_frame.columnconfigure(1, weight=1)
+link_input_label = Label(input_frame, text='Please Paste Link Above and Select "Add Link"',
+                         background="#434547", foreground="white", height=1, font=("Helvetica", 10))
+link_input_label.grid(row=0, column=0, columnspan=4, padx=8, pady=(4, 7), sticky=W + E)
+
+# ---------------------------------------------------------------------------------------------------------- Input Frame
+
 # Notebook Frame ------------------------------------------------------------------------------------------------------
 tabs = ttk.Notebook(main, height=200)
-tabs.grid(row=1, column=0, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10, 0))
+tabs.grid(row=2, column=0, columnspan=4, sticky=E + W + N + S, padx=20, pady=(10, 0))
 general_frame = Frame(tabs, background="#434547")
 video_frame = Frame(tabs, background="#434547")
 audio_frame = Frame(tabs, background="#434547")
@@ -241,17 +253,28 @@ tabs.add(audio_frame, text='  Audio Settings  ')
 
 # Add Link to variable ------------------------------------------------------------------------------------------------
 def apply_link():
-    global download_link
+    global download_link, extracted_title_name, link_input_label
     link_entry.config(state=NORMAL)  #
     link_entry.delete(0, END)  # This function clears entry box in order to add new link to entry box
     link_entry.config(state=DISABLED)  #
-    download_link = text_area.get(1.0, END)  # Pasted download link
+    download_link = text_area.get(1.0, END).rstrip("\n")  # Pasted download link and strips the unneeded newline
     text_area.delete(1.0, END)  # Deletes entry box where you pasted your link as it stores it into var
     link_entry.config(state=NORMAL)  #
     link_entry.insert(0, download_link)  # Adds download_link to entry box
     link_entry.config(state=DISABLED)  #
     save_btn.config(state=NORMAL)
     list_all_formats.config(state=NORMAL)
+    try:
+        title_name_command = '"' + youtube_dl_cli + ' -s --get-filename -o "%(title)s.%(ext)s" ' + download_link + '"'
+        extract_title_name = subprocess.run('cmd /c ' + title_name_command, universal_newlines=True,
+                                            stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
+        from re import sub as resub
+        string_one = resub('[^a-zA-Z0-9 \n\.]', '', extract_title_name.stdout)
+        string_two = " ".join(string_one.split())
+        extracted_title_name = pathlib.Path(string_two[:128]).with_suffix('')
+    except:
+        extracted_title_name = download_link
+    link_input_label.configure(text=extracted_title_name)
 
 # ------------------------------------------------------------------------------------------------------------ Add Link
 
@@ -548,7 +571,7 @@ def view_command():
 
 # Start Job -----------------------------------------------------------------------------------------------------------
 def start_job():
-    global custom_job, output_name, audio_spinbox_var, video_spinbox_var
+    global custom_job, output_name, audio_textinput, video_textinput, stream_window, extracted_title_name
     if shell_options.get() == 'Default':  # This allows the program to spawn new windows and provide real time progress
         def close_encode():
             confirm_exit = messagebox.askyesno(title='Prompt',
@@ -563,27 +586,31 @@ def start_job():
             thread = threading.Thread(target=close_encode)
             thread.start()
 
-        window = Toplevel(main)
-        window.title(download_link)
-        window.configure(background="#434547")
-        encode_label = Label(window, text='- ' * 22 + 'Progress ' + '- ' * 22,
-                             font=("Times New Roman", 14), background='#434547', foreground="white")
-        encode_label.grid(column=0, columnspan=2, row=0)
-        window.grid_columnconfigure(0, weight=1)
-        window.grid_rowconfigure(0, weight=1)
-        window.grid_rowconfigure(1, weight=1)
-        window.protocol('WM_DELETE_WINDOW', close_window)
-        window.geometry("600x140")
-        encode_window_progress = Text(window, height=2, relief=SUNKEN, bd=3)
-        encode_window_progress.grid(row=1, column=0, columnspan=2, pady=(10, 6), padx=10, sticky=E + W)
-        encode_window_progress.insert(END, '')
-        app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, mode='determinate')
-        app_progress_bar.grid(row=2, columnspan=2, pady=(10, 10), padx=15, sticky=E + W)
-
     if custom_job == 'On':  # Code required for custom job selection
+        def custom_file_save_location():
+            global output_name
+            output_name = filedialog.asksaveasfilename(parent=stream_window, title='Save File Name', initialdir='/',
+                                                       initialfile=extracted_title_name, defaultextension='')
+
+        vid_text_input = video_textinput.get('1.0', 'end-1c').replace(' ', '')
+        aud_text_input = audio_textinput.get('1.0', 'end-1c').replace(' ', '')
+
+        if len(vid_text_input) == 0 and len(aud_text_input) == 0:
+            messagebox.showinfo(title='Info', message='Please type in an ID code for desired output',
+                                parent=stream_window)
+        if len(vid_text_input) > 0 and len(aud_text_input) == 0:
+            custom_code_input = vid_text_input
+            custom_file_save_location()
+        if len(vid_text_input) == 0 and len(aud_text_input) > 0:
+            custom_code_input = aud_text_input
+            custom_file_save_location()
+        if len(vid_text_input) > 0 and len(aud_text_input) > 0:
+            custom_code_input = vid_text_input + '+' + aud_text_input
+            custom_file_save_location()
+
         command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title' \
-                  + ' -o ' + '"' + output_name + '" ' + '-f ' + video_spinbox_var.get() \
-                  + '+' + audio_spinbox_var.get() + ' ' + '--merge-output-format mkv ' + download_link + '"'
+                  + ' -o ' + '"' + output_name + '" ' + '-f ' + custom_code_input + ' ' \
+                  + '--merge-output-format mkv ' + download_link + '"'
 
     if custom_job == 'Off':  # All jobs that aren't part of the custom job window
         if video_only.get() != 'on':
@@ -602,6 +629,23 @@ def start_job():
                   + yt_subtitle.get() + dl_playlist.get() + ' ' + ignore_errors.get() \
                   + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
     if shell_options.get() == "Default":
+        window = Toplevel(main)
+        window.title(download_link)
+        window.configure(background="#434547")
+        encode_label = Label(window, text='- ' * 22 + 'Progress ' + '- ' * 22,
+                             font=("Times New Roman", 14), background='#434547', foreground="white")
+        encode_label.grid(column=0, columnspan=2, row=0)
+        window.grid_columnconfigure(0, weight=1)
+        window.grid_rowconfigure(0, weight=1)
+        window.grid_rowconfigure(1, weight=1)
+        window.protocol('WM_DELETE_WINDOW', close_window)
+        window.geometry("600x140")
+        encode_window_progress = Text(window, height=2, relief=SUNKEN, bd=3)
+        encode_window_progress.grid(row=1, column=0, columnspan=2, pady=(10, 6), padx=10, sticky=E + W)
+        encode_window_progress.insert(END, '')
+        app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, mode='determinate')
+        app_progress_bar.grid(row=2, columnspan=2, pady=(10, 10), padx=15, sticky=E + W)
+
         job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                creationflags=subprocess.CREATE_NO_WINDOW)
@@ -658,6 +702,10 @@ def paste_clipboard():  # Allows user to paste what ever is in their clipboard w
 def remove_text(e):  # Deletes current text in text box upon 'Left Clicking'
     text_area.config(foreground="black")
     text_area.delete(1.0, END)
+    link_input_label.configure(text='Please Paste Link Above and Select "Add Link"')
+    link_entry.config(state=NORMAL)  #
+    link_entry.delete(0, END)  # This function clears entry box in order to add new link to entry box
+    link_entry.config(state=DISABLED)  #
 
 m = Menu(main, tearoff=0)  # Pop up menu for 'Paste'
 m.add_command(label="Paste", command=paste_clipboard)
@@ -739,7 +787,7 @@ def list_all_formats_hover_leave(e):
 
 # Function and GUI button to 'Show All Formats' -----------------------------------------------------------------------
 def custom_format():
-    global download_link, stream_window, audio_spinbox_var, video_spinbox_var
+    global download_link, stream_window, audio_textinput, video_textinput, vidtest
     try:
         command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
         run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW,
@@ -762,26 +810,15 @@ def custom_format():
         v_label.grid(column=1, row=2, columnspan=2)
         a_label = Label(stream_window, text='Audio Selction', background='#434547', foreground="white")
         a_label.grid(column=2, row=2, columnspan=1)
-        video_spinbox_var = StringVar()
-        video_spinbox = Spinbox(stream_window, from_=0, to=1000, increment=1.0, justify=CENTER,
-                                wrap=True, textvariable=video_spinbox_var)
-        video_spinbox.configure(background="#23272A", foreground="white", highlightthickness=1,
-                                buttonbackground="#8b0000", width=15, readonlybackground="#23272A")
-        video_spinbox.grid(row=3, column=1, columnspan=2, padx=10, pady=3)
-        audio_spinbox_var = StringVar()
-        audio_spinbox = Spinbox(stream_window, from_=0, to=1000, increment=1.0, justify=CENTER,
-                                wrap=True, textvariable=audio_spinbox_var)
-        audio_spinbox.configure(background="#23272A", foreground="white", highlightthickness=1,
-                                buttonbackground="#8b0000", width=15, readonlybackground="#23272A")
-        audio_spinbox.grid(row=3, column=2, columnspan=1, padx=10, pady=3)
+        video_textinput = Text(stream_window, height=1, width=14)
+        video_textinput.grid(row=3, column=1, columnspan=2, padx=10, pady=3)
+        audio_textinput = Text(stream_window, height=1, width=14)
+        audio_textinput.grid(row=3, column=2, columnspan=1, padx=10, pady=3)
 
         def start_audio_job_custom():
             global custom_job, output_name
             custom_job = 'On'
-            output_name = filedialog.asksaveasfilename(parent=stream_window, title='Save File Name', initialdir='/',
-                                                       initialfile='Custom_Download', defaultextension='')
-            if output_name:
-                threading.Thread(target=start_job).start()
+            threading.Thread(target=start_job).start()
 
         start_custom_button = Button(stream_window, text="Start Audio Job",
                                      command=start_audio_job_custom, foreground="white", background="#8b0000",
