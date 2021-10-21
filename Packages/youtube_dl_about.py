@@ -19,7 +19,7 @@ def openaboutwindow():
     about_window_text.insert(INSERT, "\n")
     about_window_text.insert(INSERT, "Development: jlw4049")
     about_window_text.insert(INSERT, "\n\n")
-    about_window_text.insert(INSERT, "Youtube audio/video downloader. \n")
+    about_window_text.insert(INSERT, "Video audio/video downloader. \n")
     about_window_text.configure(state=DISABLED)
 
 
