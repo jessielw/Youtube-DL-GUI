@@ -963,7 +963,7 @@ def downloadfiles():
             lbl.configure(text='Extracting ffmpeg.exe')  # Update label
             app_progress_bar['value'] = int(0)  # Sets progress bar back to 0%
             sleep(2)  # Halts the program for 2 seconds
-            command = '"' + '"Apps/7z/7za.exe" e ' \
+            command = '"' + '"Apps/7z/7z.exe" e ' \
                       + '"Apps/temp/ffmpeg-git-full.7z" "-oApps/ffmpeg" ffmpeg.exe -r' + '"'
             subprocess.Popen('cmd /c' + command,
                              creationflags=subprocess.CREATE_NO_WINDOW)  # Command to extract .7z
