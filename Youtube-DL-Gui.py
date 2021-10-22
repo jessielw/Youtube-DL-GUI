@@ -6,6 +6,7 @@ import subprocess, pyperclip, shutil, pathlib, threading, urllib.request, ssl
 from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
 from time import sleep
+from re import sub as resub
 # This creates an ini file for the autodownloader
 from Packages.downloadlinks import download_link_script
 download_link_script()
@@ -27,7 +28,7 @@ def main_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 main = Tk()
-main.title("Youtube-DL-Gui v1.35.8")
+main.title("Youtube-DL-Gui v1.35.9")
 main.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 main.configure(background="#434547")
 window_height = 580
@@ -61,6 +62,10 @@ if not config.has_section('debug_option'):
     config.add_section('debug_option')
 if not config.has_option('debug_option', 'option'):
     config.set('debug_option', 'option', '')
+if not config.has_section('close_custom_window_auto'):
+    config.add_section('close_custom_window_auto')
+if not config.has_option('close_custom_window_auto', 'option'):
+    config.set('close_custom_window_auto', 'option', 'off')
 try:
     with open(config_file, 'w') as configfile:
         config.write(configfile)
@@ -266,10 +271,12 @@ def apply_link():
     list_all_formats.config(state=NORMAL)
     try:
         title_name_command = '"' + youtube_dl_cli + ' -s --get-filename -o "%(title)s.%(ext)s" ' + download_link + '"'
-        extract_title_name = subprocess.run('cmd /c ' + title_name_command, universal_newlines=True,
-                                            stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
-        from re import sub as resub
-        string_one = resub('[^a-zA-Z0-9 \n\.]', '', extract_title_name.stdout)
+        extract_title_name = subprocess.Popen('cmd /c ' + title_name_command, universal_newlines=True,
+                                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                              stdin=subprocess.DEVNULL,
+                                              creationflags=subprocess.CREATE_NO_WINDOW)
+        extract_string = extract_title_name.communicate()[0]
+        string_one = resub('[^a-zA-Z0-9 \n\.]', '', extract_string)
         string_two = " ".join(string_one.split())
         extracted_title_name = pathlib.Path(string_two[:128]).with_suffix('')
     except:
@@ -628,7 +635,11 @@ def start_job():
                   + download_rate_choices[download_rate.get()] + no_continue.get() + no_part.get() \
                   + yt_subtitle.get() + dl_playlist.get() + ' ' + ignore_errors.get() \
                   + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
-    if shell_options.get() == "Default":
+    if shell_options.get() == "Default" and output_name == '':
+        pass
+    if shell_options.get() == "Default" and output_name != '':
+        if config['close_custom_window_auto']['option'] == 'on':
+            stream_window.destroy()
         window = Toplevel(main)
         window.title(download_link)
         window.configure(background="#434547")
@@ -787,7 +798,8 @@ def list_all_formats_hover_leave(e):
 
 # Function and GUI button to 'Show All Formats' -----------------------------------------------------------------------
 def custom_format():
-    global download_link, stream_window, audio_textinput, video_textinput, vidtest
+    global download_link, stream_window, audio_textinput, video_textinput, vidtest, extracted_title_name, \
+        auto_close_custom
     try:
         command = '"' + youtube_dl_cli + ' -F ' + download_link + '"'
         run = subprocess.Popen('cmd /c ' + command, creationflags=subprocess.CREATE_NO_WINDOW,
@@ -801,19 +813,37 @@ def custom_format():
         stream_window.title('Custom Download Options')
         stream_window.configure(background="#434547")
         show_format_text = scrolledtext.ScrolledText(stream_window, width=120, height=25, tabs=10)
-        show_format_text.grid(column=0, pady=10, padx=10, row=1, columnspan=3)
+        show_format_text.grid(column=0, pady=10, padx=10, row=0, columnspan=3)
         show_format_text.configure(state=NORMAL)
         show_format_text.insert(END, '- - - - - Match the format code on the left '
-                                     'in the video/audio boxes for desired outcome - - - - -\n\n\n', 'centered')
+                                     'in the video/audio boxes for desired outcome - - - - -\n\n\n'
+                                + str(extracted_title_name) + '\n\n', 'centered')
         show_format_text.tag_configure("centered", justify="center", font=("Times New Roman", 16))
-        v_label = Label(stream_window, text='Video Selction', background='#434547', foreground="white")
-        v_label.grid(column=1, row=2, columnspan=2)
-        a_label = Label(stream_window, text='Audio Selction', background='#434547', foreground="white")
-        a_label.grid(column=2, row=2, columnspan=1)
+
+        def set_auto_close_custom():
+            config.set('close_custom_window_auto', 'option', auto_close_custom.get())
+            try:
+                with open(config_file, 'w') as configfile:
+                    config.write(configfile)
+            except:
+                pass
+
+        auto_close_custom = StringVar()
+        auto_close_custom_checkbox = Checkbutton(stream_window, text='Close Automatically',
+                                                 variable=auto_close_custom, onvalue='on', offvalue='off',
+                                                 command=set_auto_close_custom, takefocus=False)
+        auto_close_custom_checkbox.grid(row=2, column=0, columnspan=1, rowspan=2, padx=10, pady=6, sticky=W)
+        auto_close_custom_checkbox.configure(background="#434547", foreground="white", activebackground="#434547",
+                                      activeforeground="white", selectcolor="#434547", font=("Helvetica", 12))
+        auto_close_custom.set(config['close_custom_window_auto']['option'])
+        v_label = Label(stream_window, text='Video ID:' + ' ' * 17, background='#434547', foreground="white")
+        v_label.grid(column=1, row=2, columnspan=1, padx=10, pady=3, sticky=E)
+        a_label = Label(stream_window, text='Audio ID:', background='#434547', foreground="white")
+        a_label.grid(column=2, row=2, columnspan=1, padx=10, pady=3, sticky=W)
         video_textinput = Text(stream_window, height=1, width=14)
-        video_textinput.grid(row=3, column=1, columnspan=2, padx=10, pady=3)
+        video_textinput.grid(row=3, column=1, columnspan=1, padx=10, pady=3, sticky=E)
         audio_textinput = Text(stream_window, height=1, width=14)
-        audio_textinput.grid(row=3, column=2, columnspan=1, padx=10, pady=3)
+        audio_textinput.grid(row=3, column=2, columnspan=1, padx=10, pady=3, sticky=W)
 
         def start_audio_job_custom():
             global custom_job, output_name
