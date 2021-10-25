@@ -29,7 +29,7 @@ def main_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 main = Tk()
-main.title("Youtube-DL-Gui v1.36")
+main.title("Youtube-DL-Gui v1.36.1")
 main.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 main.configure(background="#434547")
 window_height = 580
@@ -620,9 +620,54 @@ def start_job():
             custom_code_input = vid_text_input + '+' + aud_text_input
             custom_file_save_location()
 
-        command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title' \
-                  + ' -o ' + '"' + output_name + '.mkv" ' + '-f ' + custom_code_input + ' ' \
-                  + '--merge-output-format mkv ' + download_link + '"'
+        command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title ' \
+                  + '--no-playlist ' + '-o ' + '"' + output_name + '.mkv" ' + '-f ' + custom_code_input + ' ' \
+                  + '--merge-output-format mkv "' + download_link + '""'
+
+        if shell_options.get() == "Default" and output_name == '':
+            pass
+        if shell_options.get() == "Default" and output_name != '':
+            if config['close_custom_window_auto']['option'] == 'on':
+                stream_window.destroy()
+            window = Toplevel(main)
+            window.title(download_link)
+            window.configure(background="#434547")
+            encode_label = Label(window, text='- ' * 22 + 'Progress ' + '- ' * 22,
+                                 font=("Times New Roman", 14), background='#434547', foreground="white")
+            encode_label.grid(column=0, columnspan=2, row=0)
+            window.grid_columnconfigure(0, weight=1)
+            window.grid_rowconfigure(0, weight=1)
+            window.grid_rowconfigure(1, weight=1)
+            window.protocol('WM_DELETE_WINDOW', close_window)
+            window.geometry("600x140")
+            encode_window_progress = Text(window, height=2, relief=SUNKEN, bd=3)
+            encode_window_progress.grid(row=1, column=0, columnspan=2, pady=(10, 6), padx=10, sticky=E + W)
+            encode_window_progress.insert(END, '')
+            app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, mode='determinate')
+            app_progress_bar.grid(row=2, columnspan=2, pady=(10, 10), padx=15, sticky=E + W)
+
+            job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
+            for line in job.stdout:
+                encode_window_progress.delete('1.0', END)
+                encode_window_progress.insert(END, line)
+                try:
+                    download = line.split()[1].rsplit('.', 1)[0]
+                    app_progress_bar['value'] = int(download)
+                except:
+                    pass
+            window.destroy()
+        elif shell_options.get() == 'Debug' and output_name == '':
+            pass
+        elif shell_options.get() == 'Debug' and output_name != '':
+            if config['close_custom_window_auto']['option'] == 'on':
+                stream_window.destroy()
+            subprocess.Popen('cmd /k' + command)
+        try:
+            cmd_line_window.withdraw()
+        except:
+            pass
 
     if custom_job == 'Off':  # All jobs that aren't part of the custom job window
         if video_only.get() != 'on':
@@ -639,12 +684,8 @@ def start_job():
                   + audio_format_selection + audio_quality_selection + metadata_from_title.get() \
                   + download_rate_choices[download_rate.get()] + no_continue.get() + no_part.get() \
                   + yt_subtitle.get() + dl_playlist.get() + ' ' + ignore_errors.get() \
-                  + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" ' + download_link + '"'
-    if shell_options.get() == "Default" and output_name == '':
-        pass
-    if shell_options.get() == "Default" and output_name != '':
-        if config['close_custom_window_auto']['option'] == 'on':
-            stream_window.destroy()
+                  + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" "' + download_link + '""'
+    if shell_options.get() == "Default":
         window = Toplevel(main)
         window.title(download_link)
         window.configure(background="#434547")
@@ -673,7 +714,7 @@ def start_job():
                 app_progress_bar['value'] = int(download)
             except:
                 pass
-            try:
+            try:  # Block of code to make a new mini progress bar if the user is downloading a playlist
                 playlist_amnt = line.split()[0]
                 if playlist_amnt == '[download]':
                     amount = line.split()[2]
@@ -694,11 +735,7 @@ def start_job():
             except:
                 pass
         window.destroy()
-    elif shell_options.get() == 'Debug' and output_name == '':
-        pass
-    elif shell_options.get() == 'Debug' and output_name != '':
-        if config['close_custom_window_auto']['option'] == 'on':
-            stream_window.destroy()
+    elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
     try:
         cmd_line_window.withdraw()
