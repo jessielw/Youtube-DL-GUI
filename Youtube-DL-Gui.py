@@ -7,9 +7,10 @@ from Packages.youtube_dl_about import openaboutwindow
 from configparser import ConfigParser
 from time import sleep
 from re import sub as resub
-# This creates an ini file for the autodownloader
+# This creates an ini file for the auto-downloader ####
 from Packages.downloadlinks import download_link_script
 download_link_script()
+#######################################################
 # -------------------------------------------------------------------- Imports
 
 # Main Gui & Windows ---------------------------------------------------------------------------------------
@@ -28,7 +29,7 @@ def main_exit_function():  # Asks if the user is ready to exit
 
 # Main UI window ---------------------------------------------------------------------------------------------
 main = Tk()
-main.title("Youtube-DL-Gui v1.35.9")
+main.title("Youtube-DL-Gui v1.36")
 main.iconphoto(True, PhotoImage(file="Runtime/Images/Youtube-DL-Gui.png"))
 main.configure(background="#434547")
 window_height = 580
@@ -616,7 +617,7 @@ def start_job():
             custom_file_save_location()
 
         command = '"' + youtube_dl_cli + ' --ffmpeg-location ' + ffmpeg + ' --console-title' \
-                  + ' -o ' + '"' + output_name + '" ' + '-f ' + custom_code_input + ' ' \
+                  + ' -o ' + '"' + output_name + '.mkv" ' + '-f ' + custom_code_input + ' ' \
                   + '--merge-output-format mkv ' + download_link + '"'
 
     if custom_job == 'Off':  # All jobs that aren't part of the custom job window
@@ -689,7 +690,11 @@ def start_job():
             except:
                 pass
         window.destroy()
-    elif shell_options.get() == 'Debug':
+    elif shell_options.get() == 'Debug' and output_name == '':
+        pass
+    elif shell_options.get() == 'Debug' and output_name != '':
+        if config['close_custom_window_auto']['option'] == 'on':
+            stream_window.destroy()
         subprocess.Popen('cmd /k' + command)
     try:
         cmd_line_window.withdraw()
