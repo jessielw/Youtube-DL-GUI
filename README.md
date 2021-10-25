@@ -2,4 +2,4 @@
 
 ## Graphical User Interace built around youtube-dl CLI
 
-![screenshot.1.35.8](screenshot.png)
+![screenshot.1.36](screenshot.png)
