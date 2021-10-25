@@ -685,62 +685,62 @@ def start_job():
                   + download_rate_choices[download_rate.get()] + no_continue.get() + no_part.get() \
                   + yt_subtitle.get() + dl_playlist.get() + ' ' + ignore_errors.get() \
                   + ' -o ' + '"' + VideoOutput + '/%(title)s.%(ext)s' + '" "' + download_link + '""'
-    if shell_options.get() == "Default":
-        window = Toplevel(main)
-        window.title(download_link)
-        window.configure(background="#434547")
-        encode_label = Label(window, text='- ' * 22 + 'Progress ' + '- ' * 22,
-                             font=("Times New Roman", 14), background='#434547', foreground="white")
-        encode_label.grid(column=0, columnspan=2, row=0)
-        window.grid_columnconfigure(0, weight=1)
-        window.grid_rowconfigure(0, weight=1)
-        window.grid_rowconfigure(1, weight=1)
-        window.protocol('WM_DELETE_WINDOW', close_window)
-        window.geometry("600x140")
-        encode_window_progress = Text(window, height=2, relief=SUNKEN, bd=3)
-        encode_window_progress.grid(row=1, column=0, columnspan=2, pady=(10, 6), padx=10, sticky=E + W)
-        encode_window_progress.insert(END, '')
-        app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, mode='determinate')
-        app_progress_bar.grid(row=2, columnspan=2, pady=(10, 10), padx=15, sticky=E + W)
+        if shell_options.get() == "Default":
+            window = Toplevel(main)
+            window.title(download_link)
+            window.configure(background="#434547")
+            encode_label = Label(window, text='- ' * 22 + 'Progress ' + '- ' * 22,
+                                 font=("Times New Roman", 14), background='#434547', foreground="white")
+            encode_label.grid(column=0, columnspan=2, row=0)
+            window.grid_columnconfigure(0, weight=1)
+            window.grid_rowconfigure(0, weight=1)
+            window.grid_rowconfigure(1, weight=1)
+            window.protocol('WM_DELETE_WINDOW', close_window)
+            window.geometry("600x140")
+            encode_window_progress = Text(window, height=2, relief=SUNKEN, bd=3)
+            encode_window_progress.grid(row=1, column=0, columnspan=2, pady=(10, 6), padx=10, sticky=E + W)
+            encode_window_progress.insert(END, '')
+            app_progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, mode='determinate')
+            app_progress_bar.grid(row=2, columnspan=2, pady=(10, 10), padx=15, sticky=E + W)
 
-        job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                               creationflags=subprocess.CREATE_NO_WINDOW)
-        for line in job.stdout:
-            encode_window_progress.delete('1.0', END)
-            encode_window_progress.insert(END, line)
-            try:
-                download = line.split()[1].rsplit('.', 1)[0]
-                app_progress_bar['value'] = int(download)
-            except:
-                pass
-            try:  # Block of code to make a new mini progress bar if the user is downloading a playlist
-                playlist_amnt = line.split()[0]
-                if playlist_amnt == '[download]':
-                    amount = line.split()[2]
-                    if amount == 'video':
-                        window.geometry("600x190")
-                        modify_line = line.split()[1:]
-                        total_file_progress = (', '.join(modify_line).replace(',', '').replace('video', 'file'))
-                        progress_label = Label(window, text=total_file_progress, font=("Times New Roman", 14),
-                                               background='#434547', foreground="white")
-                        progress_label.grid(row=3, column=0, pady=(0, 20))
-                        file_progress = line.split()[3]
-                        file_progress_total = line.split()[5]
-                        mini_progressbar = ttk.Progressbar(window, orient=HORIZONTAL, length=300,
-                                                           mode='determinate')
-                        mini_progressbar.grid(row=3, column=1, pady=(0, 10), padx=(0, 15))
-                        percent = '{:.1%}'.format(int(file_progress) / int(file_progress_total)).split('.', 1)[0]
-                        mini_progressbar['value'] = int(percent)
-            except:
-                pass
-        window.destroy()
-    elif shell_options.get() == 'Debug':
-        subprocess.Popen('cmd /k' + command)
-    try:
-        cmd_line_window.withdraw()
-    except:
-        pass
+            job = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
+            for line in job.stdout:
+                encode_window_progress.delete('1.0', END)
+                encode_window_progress.insert(END, line)
+                try:
+                    download = line.split()[1].rsplit('.', 1)[0]
+                    app_progress_bar['value'] = int(download)
+                except:
+                    pass
+                try:  # Block of code to make a new mini progress bar if the user is downloading a playlist
+                    playlist_amnt = line.split()[0]
+                    if playlist_amnt == '[download]':
+                        amount = line.split()[2]
+                        if amount == 'video':
+                            window.geometry("600x190")
+                            modify_line = line.split()[1:]
+                            total_file_progress = (', '.join(modify_line).replace(',', '').replace('video', 'file'))
+                            progress_label = Label(window, text=total_file_progress, font=("Times New Roman", 14),
+                                                   background='#434547', foreground="white")
+                            progress_label.grid(row=3, column=0, pady=(0, 20))
+                            file_progress = line.split()[3]
+                            file_progress_total = line.split()[5]
+                            mini_progressbar = ttk.Progressbar(window, orient=HORIZONTAL, length=300,
+                                                               mode='determinate')
+                            mini_progressbar.grid(row=3, column=1, pady=(0, 10), padx=(0, 15))
+                            percent = '{:.1%}'.format(int(file_progress) / int(file_progress_total)).split('.', 1)[0]
+                            mini_progressbar['value'] = int(percent)
+                except:
+                    pass
+            window.destroy()
+        elif shell_options.get() == 'Debug':
+            subprocess.Popen('cmd /k' + command)
+        try:
+            cmd_line_window.withdraw()
+        except:
+            pass
 
 # ----------------------------------------------------------------------------------------------------------- Start Job
 
