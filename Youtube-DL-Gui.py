@@ -86,8 +86,12 @@ def check_for_update():
     command = '"' + youtube_dl_cli + '" --update'
     if shell_options.get() == 'Default':
         main.wm_attributes('-alpha', 0.7)
-        yt_update = subprocess.check_output('cmd /c' + command, creationflags=subprocess.CREATE_NO_WINDOW)
-        messagebox.showinfo(parent=main, title='Info', message=yt_update)
+        update_yt_exe = subprocess.Popen('cmd /c ' + command, universal_newlines=True,
+                                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                              stdin=subprocess.DEVNULL,
+                                              creationflags=subprocess.CREATE_NO_WINDOW)
+        update_string = update_yt_exe.communicate()[0]
+        messagebox.showinfo(parent=main, title='Info', message=str(update_string))
         main.wm_attributes('-alpha', 1.0)
     elif shell_options.get() == 'Debug':
         subprocess.Popen('cmd /k' + command)
